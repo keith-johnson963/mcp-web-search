@@ -19,7 +19,7 @@ if (!BRAVE_API_KEY) {
 const braveSearch = new BraveSearch(BRAVE_API_KEY)
 
 server.addTool({
-  name: "Brave Image Search",
+  name: "brave_image_search",
   description: "Search for images using Brave Search",
   parameters: z.object({
     searchTerm: z.string().describe("The term to search the internet for images of"),
