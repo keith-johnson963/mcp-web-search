@@ -19,6 +19,7 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.8.0",
     "brave-search": "^0.7.0",
+    "fastmcp": "^1.20.5",
     "zod": "^3.24.2"
   },
   "devDependencies": {
