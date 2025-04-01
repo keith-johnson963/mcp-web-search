@@ -52,6 +52,49 @@ server.tool(
   }
 )
 
+const searchDescription = "Performs a web search using the Brave Search API, ideal for general queries, news, articles, and online content. " +
+"Use this for broad information gathering, recent events, or when you need diverse web sources. " +
+"Supports pagination, content filtering, and freshness controls. " +
+"Maximum 20 results per request, with offset for pagination. "
+
+server.tool(
+  "brave_web_search",
+  searchDescription,
+  {
+    query: z.string().describe("The term to search the internet for"),
+    count: z.number().min(1).max(20).default(10).describe("The number of results to return"),
+    offset: z.number().min(0).max(9).default(0).describe("The offset for pagination"),
+  },
+  async ({ query, count, offset }) => {
+    console.log(`Searching for "${query}" with count ${count} and offset ${offset}`);
+    try {
+      const results = await braveSearch.webSearch(query, {
+        count,
+        offset,
+        safesearch: SafeSearchLevel.Strict
+      })
+      if (results.web?.results.length === 0) {
+        console.log(`No results found for "${query}"`);
+        return { content: [] }
+      }
+      // log.info(`Found ${results.results.length} results for "${query}"`)
+      return {
+        content: results.web?.results.map((result) => ({
+          type: "text",
+          text: `Title: ${result.title}\nURL: ${result.url}\nDescription: ${result.description}`,
+        })) || []
+      }
+    } catch (error) {
+      console.error(`Error searching for "${query}": ${error}`)
+      return {
+        content: [],
+        isError: true,
+        error: `Error searching for "${query}": ${error}`
+      }
+    }
+  }
+)
+
 // configure the server to use SSE transport
 let transport: SSEServerTransport | null = null;
 
