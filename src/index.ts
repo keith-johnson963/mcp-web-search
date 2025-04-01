@@ -23,19 +23,25 @@ server.addTool({
   description: "Search for images using Brave Search",
   parameters: z.object({
     searchTerm: z.string().describe("The term to search the internet for images of"),
-    count: z.number().min(1).max(6).default(1).describe("The number of images to search for"),
+    count: z.number().min(1).max(3).default(1).describe("The number of images to search for"),
   }),
-  execute: async (input) => {
+  execute: async (input, { log }) => {
     const { searchTerm, count } = input;
-    const imageResults = await braveSearch.imageSearch(searchTerm, {
-      count,
-      safesearch: SafeSearchLevel.Strict
-    })
-    const content = []
-    for (const result of imageResults.results) {
-      content.push(await imageContent({ url: result.properties.url}))
-    } 
-    return { content }
+    try {
+      const imageResults = await braveSearch.imageSearch(searchTerm, {
+        count,
+        safesearch: SafeSearchLevel.Strict
+      })
+      log.info(`Found ${imageResults.results.length} images for "${searchTerm}"`)
+      const content = []
+      for (const result of imageResults.results) {
+        content.push(await imageContent({ url: result.properties.url}))
+      } 
+      return { content }
+    } catch (error) {
+      log.error(`Error searching for images: ${error}`)
+      return { content: [] }
+    }
   }
 })
 
