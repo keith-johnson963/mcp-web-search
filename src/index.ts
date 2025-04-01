@@ -33,6 +33,7 @@ server.tool(
     count: z.number().min(1).max(3).default(1).describe("The number of images to search for"),
   },
   async ({ searchTerm, count }) => {
+    console.log(`Searching for images of "${searchTerm}" with count ${count}`);
     try {
       const imageResults = await braveSearch.imageSearch(searchTerm, {
         count,
@@ -66,3 +67,4 @@ app.post("/messages", (req: Request, res: Response) => {
 });
 
 app.listen(3033);
+console.log("Server is running on port 3033");
