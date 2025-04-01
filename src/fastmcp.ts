@@ -46,5 +46,9 @@ server.addTool({
 })
 
 server.start({
-  transportType: "stdio"
+  transportType: "sse",
+  sse: {
+    port: 3033,
+    endpoint: "/sse"
+  }
 })
