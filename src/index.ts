@@ -7,6 +7,7 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { BraveSearch } from 'brave-search';
 import { SafeSearchLevel } from 'brave-search/dist/types.js';
 import express from 'express';
+import imageToBase64 from 'image-to-base64';
 import { z } from 'zod';
 
 const server = new McpServer(
@@ -46,12 +47,15 @@ server.tool(
         count,
         safesearch: SafeSearchLevel.Strict,
       });
-      // log.info(`Found ${imageResults.results.length} images for "${searchTerm}"`)
+      log(`Found ${imageResults.results.length} images for "${searchTerm}"`, 'debug');
       const content = [];
       for (const result of imageResults.results) {
+        const base64 = await imageToBase64(result.properties.url);
+        log(`Image base64 length: ${base64.length}`, 'debug');
         content.push({
-          type: 'text' as const,
-          text: `Title: ${result.title}\nURL: ${result.properties.url}`,
+          type: 'image' as const,
+          data: base64,
+          mimeType: 'image/png',
         });
       }
       return { content };
