@@ -98,7 +98,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
 
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   try {
-    const { name, argument: args } = request.params;
+    const { name, arguments: args } = request.params;
     if (!args) {
       throw new Error('No arguments provided');
     }
