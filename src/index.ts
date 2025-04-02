@@ -48,12 +48,19 @@ server.tool(
       // log.info(`Found ${imageResults.results.length} images for "${searchTerm}"`)
       const content = []
       for (const result of imageResults.results) {
-        content.push(await imageContent({ url: result.properties.url}))
+        content.push({
+          type: "text" as const,
+          text: `Title: ${result.title}\nURL: ${result.url}`,
+        })
       } 
       return { content }
     } catch (error) {
       console.error(`Error searching for images: ${error}`)
-      return { content: [] }
+      return { 
+        content: [],
+        isError: true,
+        error: `Error searching for images: ${error}`
+      }
     }
   }
 )
