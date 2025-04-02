@@ -34,7 +34,7 @@ server.tool(
     count: z.number().min(1).max(3).default(1).describe("The number of images to search for"),
   },
   async ({ searchTerm, count }) => {
-    console.log(`Searching for images of "${searchTerm}" with count ${count}`);
+    log(`Searching for images of "${searchTerm}" with count ${count}`, "debug");
     try {
       const imageResults = await braveSearch.imageSearch(searchTerm, {
         count,
@@ -67,7 +67,7 @@ server.tool(
     offset: z.number().min(0).max(9).default(0).describe("The offset for pagination"),
   },
   async ({ query, count, offset }) => {
-    console.log(`Searching for "${query}" with count ${count} and offset ${offset}`);
+    log(`Searching for "${query}" with count ${count} and offset ${offset}`, "debug");
     try {
       const results = await braveSearch.webSearch(query, {
         count,
@@ -75,7 +75,7 @@ server.tool(
         safesearch: SafeSearchLevel.Strict
       })
       if (results.web?.results.length === 0) {
-        console.log(`No results found for "${query}"`);
+        log(`No results found for "${query}"`);
         return { content: [] }
       }
       // log.info(`Found ${results.results.length} results for "${query}"`)
@@ -112,7 +112,7 @@ const { values: { useSSE, port } } = parseArgs({
 
 async function main() {
   if (useSSE) {
-    console.log("Running with SSE transport");
+    log("Running with SSE transport");
     const portInt = parseInt(port, 10);
     if (isNaN(portInt)) {
       console.error(`Invalid port number: ${port}`);
@@ -132,12 +132,26 @@ async function main() {
       }
     });
 
-    app.listen(3033);
-    console.log("Server is running on port 3033");
+    app.listen(portInt);
+    log(`Server is running on port ${portInt} with SSE transport`);
   } else {
-    console.log('Running with STDIO')
     const transport = new StdioServerTransport();
     await server.connect(transport);
+    log("Server is running with Stdio transport");
+  }
+}
+
+function log(
+  message: string, 
+  level: "error" | "debug" | "info" | "notice" | "warning" | "critical" | "alert" | "emergency" = "info",
+) {
+  if (useSSE) {
+    console.log(message);
+  } else {
+    server.server.sendLoggingMessage({
+      level: level,
+      message: message,
+    });
   }
 }
 
