@@ -1,16 +1,17 @@
+import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import type { Request, Response } from 'express';
 import process from 'node:process';
 import { parseArgs } from 'node:util';
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { BraveSearch } from 'brave-search';
 import { SafeSearchLevel } from 'brave-search/dist/types.js';
 import express from 'express';
 import imageToBase64 from 'image-to-base64';
-import { z } from 'zod';
 
-const server = new McpServer(
+const server = new Server(
   {
     name: 'Better Brave Search',
     version: '1.0.0',
@@ -33,86 +34,196 @@ if (!BRAVE_API_KEY) {
 
 const braveSearch = new BraveSearch(BRAVE_API_KEY);
 
-server.tool(
-  'brave_image_search',
-  'Search for images using Brave Search',
-  {
-    searchTerm: z.string().describe('The term to search the internet for images of'),
-    count: z.number().min(1).max(3).default(1).describe('The number of images to search for, minimum 1, maximum 3'),
+const BRAVE_IMAGE_SEARCH_TOOL: Tool = {
+  name: 'brave_image_search',
+  description: 'Search for images using the Brave Search API',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      searchTerm: {
+        type: 'string',
+        description: 'The term to search the internet for images of',
+      },
+      count: {
+        type: 'integer',
+        minimum: 1,
+        maximum: 3,
+        default: 1,
+        description: 'The number of images to search for, minimum 1, maximum 3',
+      },
+    },
+    required: ['searchTerm'],
   },
-  async ({ searchTerm, count }) => {
-    log(`Searching for images of "${searchTerm}" with count ${count}`, 'debug');
-    try {
-      const imageResults = await braveSearch.imageSearch(searchTerm, {
-        count,
-        safesearch: SafeSearchLevel.Strict,
-      });
-      log(`Found ${imageResults.results.length} images for "${searchTerm}"`, 'debug');
-      const content = [];
-      for (const result of imageResults.results) {
-        const base64 = await imageToBase64(result.properties.url);
-        log(`Image base64 length: ${base64.length}`, 'debug');
-        content.push({
-          type: 'image' as const,
-          data: base64,
-          mimeType: 'image/png',
-        });
-      }
-      return { content };
-    }
-    catch (error) {
-      console.error(`Error searching for images: ${error}`);
-      return {
-        content: [],
-        isError: true,
-        error: `Error searching for images: ${error}`,
-      };
-    }
-  },
-);
+};
 
 const searchDescription = 'Performs a web search using the Brave Search API, ideal for general queries, news, articles, and online content. '
   + 'Use this for broad information gathering, recent events, or when you need diverse web sources. '
   + 'Supports pagination, content filtering, and freshness controls. '
   + 'Maximum 20 results per request, with offset for pagination. ';
 
-server.tool(
-  'brave_web_search',
-  searchDescription,
-  {
-    query: z.string().describe('The term to search the internet for'),
-    count: z.number().min(1).max(20).default(10).describe('The number of results to return'),
-    offset: z.number().min(0).max(9).default(0).describe('The offset for pagination'),
+const BRAVE_WEB_SEARCH_TOOL: Tool = {
+  name: 'brave_web_search',
+  description: searchDescription,
+  inputSchema: {
+    type: 'object',
+    properties: {
+      query: {
+        type: 'string',
+        description: 'The term to search the internet for',
+      },
+      count: {
+        type: 'integer',
+        minimum: 1,
+        maximum: 20,
+        default: 10,
+        description: 'The number of results to return',
+      },
+      offset: {
+        type: 'integer',
+        minimum: 0,
+        maximum: 9,
+        default: 0,
+        description: 'The offset for pagination',
+      },
+    },
+    required: ['query'],
   },
-  async ({ query, count, offset }) => {
-    log(`Searching for "${query}" with count ${count} and offset ${offset}`, 'debug');
-    try {
-      const results = await braveSearch.webSearch(query, {
-        count,
-        offset,
-        safesearch: SafeSearchLevel.Strict,
-      });
-      if (results.web?.results.length === 0) {
-        log(`No results found for "${query}"`);
-        return { content: [] };
+};
+
+const TOOLS: Tool[] = [BRAVE_IMAGE_SEARCH_TOOL, BRAVE_WEB_SEARCH_TOOL] as const;
+
+server.setRequestHandler(ListToolsRequestSchema, async () => ({
+  tools: TOOLS,
+}));
+
+server.setRequestHandler(CallToolRequestSchema, async (request) => {
+  try {
+    const { name, argument: args } = request.params;
+    if (!args) {
+      throw new Error('No arguments provided');
+    }
+    switch (name) {
+      case 'brave_image_search': {
+        if (!isImageSearchArgs(args)) {
+          throw new Error('Invalid arguments for brave_image_search tool');
+        }
+        const { searchTerm, count } = args;
+        const result = await handleImageSearch(searchTerm, count);
+        return result;
       }
-      return {
-        content: results.web?.results.map(result => ({
+
+      case 'brave_web_search': {
+        if (!isWebSearchArgs(args)) {
+          throw new Error('Invalid arguments for brave_web_search tool');
+        }
+        const { query, count, offset } = args;
+        const result = await handleWebSearch(query, count, offset);
+        return result;
+      }
+
+      default: {
+        return {
+          content: [{ type: 'text', text: `Unknown tool: ${name}` }],
+          isError: true,
+        };
+      }
+    }
+  }
+  catch (error) {
+    return {
+      content: [
+        {
           type: 'text',
-          text: `Title: ${result.title}\nURL: ${result.url}\nDescription: ${result.description}`,
-        })) || [],
-      };
+          text: `Error: ${error instanceof Error ? error.message : String(error)}`,
+        },
+      ],
+      isError: true,
+    };
+  }
+});
+
+function isImageSearchArgs(args: unknown): args is { searchTerm: string; count: number } {
+  return (
+    typeof args === 'object'
+    && args !== null
+    && 'searchTerm' in args
+    && typeof (args as { searchTerm: string }).searchTerm === 'string'
+    && 'count' in args
+    && typeof (args as { count: number }).count === 'number'
+  );
+}
+
+async function handleImageSearch(searchTerm: string, count: number) {
+  log(`Searching for images of "${searchTerm}" with count ${count}`, 'debug');
+  try {
+    const imageResults = await braveSearch.imageSearch(searchTerm, {
+      count,
+      safesearch: SafeSearchLevel.Strict,
+    });
+    log(`Found ${imageResults.results.length} images for "${searchTerm}"`, 'debug');
+    const content = [];
+    for (const result of imageResults.results) {
+      const base64 = await imageToBase64(result.properties.url);
+      log(`Image base64 length: ${base64.length}`, 'debug');
+      content.push({
+        type: 'image' as const,
+        data: base64,
+        mimeType: 'image/png',
+      });
     }
-    catch (error) {
-      console.error(`Error searching for "${query}": ${error}`);
-      return {
-        content: [],
-        isError: true,
-        error: `Error searching for "${query}": ${error}`,
-      };
+    return { content };
+  }
+  catch (error) {
+    console.error(`Error searching for images: ${error}`);
+    return {
+      content: [],
+      isError: true,
+      error: `Error searching for images: ${error}`,
+    };
+  }
+}
+
+function isWebSearchArgs(args: unknown): args is { query: string; count: number; offset: number } {
+  return (
+    typeof args === 'object'
+    && args !== null
+    && 'query' in args
+    && typeof (args as { query: string }).query === 'string'
+    && 'count' in args
+    && typeof (args as { count: number }).count === 'number'
+    && 'offset' in args
+    && typeof (args as { offset: number }).offset === 'number'
+  );
+}
+
+async function handleWebSearch(query: string, count: number, offset: number) {
+  log(`Searching for "${query}" with count ${count} and offset ${offset}`, 'debug');
+  try {
+    const results = await braveSearch.webSearch(query, {
+      count,
+      offset,
+      safesearch: SafeSearchLevel.Strict,
+    });
+    if (results.web?.results.length === 0) {
+      log(`No results found for "${query}"`);
+      return { content: [] };
     }
-  },
-);
+    return {
+      content: results.web?.results.map(result => ({
+        type: 'text',
+        text: `Title: ${result.title}\nURL: ${result.url}\nDescription: ${result.description}`,
+      })) || [],
+    };
+  }
+  catch (error) {
+    console.error(`Error searching for "${query}": ${error}`);
+    return {
+      content: [],
+      isError: true,
+      error: `Error searching for "${query}": ${error}`,
+    };
+  }
+}
 
 // Parse command line arguments
 const { values: { useSSE, port } } = parseArgs({
@@ -168,7 +279,7 @@ function log(
     console.log(message);
   }
   else {
-    server.server.sendLoggingMessage({
+    server.sendLoggingMessage({
       level,
       message,
     });
