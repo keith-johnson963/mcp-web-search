@@ -8,14 +8,19 @@ import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import { parseArgs } from "node:util";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 
-const server = new McpServer({
-  name: "Better Brave Search",
-  version: "1.0.0",
-  capabilities: {
-    resources: {},
-    tools: {},
+const server = new McpServer(
+  {
+    name: "Better Brave Search",
+    version: "1.0.0",
   },
-});
+  {
+    capabilities: {
+      resources: {},
+      tools: {},
+      logging: {}
+    }
+  }
+);
 
 // Check for API key
 const BRAVE_API_KEY = process.env.BRAVE_API_KEY;
