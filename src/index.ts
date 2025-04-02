@@ -115,6 +115,13 @@ const BRAVE_LOCAL_SEARCH_TOOL: Tool = {
         description: 'Number of results (1-20, default 5)',
         default: 5,
       },
+      offset: {
+        type: 'integer',
+        minimum: 0,
+        maximum: 9,
+        default: 0,
+        description: 'The offset for pagination',
+      },
     },
     required: ['query'],
   },
@@ -259,11 +266,12 @@ async function handleWebSearch(query: string, count: number, offset: number) {
 }
 
 async function handlePoiSearch(query: string, count: number) {
-  log(`Searching for "${query}" with count ${count}`, 'debug');
+  log(`Poi Searching for "${query}" with count ${count}`, 'debug');
   try {
     const results = await braveSearch.webSearch(query, {
       count,
       safesearch: SafeSearchLevel.Strict,
+      result_filter: 'locations',
     });
     if (!results.locations || results.locations?.results.length === 0) {
       log(`No location results found for "${query} falling back to web search"`);
