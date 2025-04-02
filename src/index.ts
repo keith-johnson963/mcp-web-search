@@ -1,4 +1,5 @@
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
+import type { LocalDescriptionsSearchApiResponse, LocalPoiSearchApiResponse } from 'brave-search/dist/types.js';
 import type { Request, Response } from 'express';
 import process from 'node:process';
 import { parseArgs } from 'node:util';
@@ -90,7 +91,36 @@ const BRAVE_WEB_SEARCH_TOOL: Tool = {
   },
 };
 
-const TOOLS: Tool[] = [BRAVE_IMAGE_SEARCH_TOOL, BRAVE_WEB_SEARCH_TOOL] as const;
+const localSearchDescription = 'Searches for local businesses and places using Brave\'s Local Search API. '
+  + 'Best for queries related to physical locations, businesses, restaurants, services, etc. '
+  + 'Returns detailed information including:\n'
+  + '- Business names and addresses\n'
+  + '- Ratings and review counts\n'
+  + '- Phone numbers and opening hours\n'
+  + 'Use this when the query implies \'near me\' or mentions specific locations. '
+  + 'Automatically falls back to web search if no local results are found.';
+
+const BRAVE_LOCAL_SEARCH_TOOL: Tool = {
+  name: 'brave_local_search',
+  description: localSearchDescription,
+  inputSchema: {
+    type: 'object',
+    properties: {
+      query: {
+        type: 'string',
+        description: 'Local search query (e.g. \'pizza near Central Park\')',
+      },
+      count: {
+        type: 'number',
+        description: 'Number of results (1-20, default 5)',
+        default: 5,
+      },
+    },
+    required: ['query'],
+  },
+};
+
+const TOOLS: Tool[] = [BRAVE_IMAGE_SEARCH_TOOL, BRAVE_WEB_SEARCH_TOOL, BRAVE_LOCAL_SEARCH_TOOL] as const;
 
 server.setRequestHandler(ListToolsRequestSchema, async () => ({
   tools: TOOLS,
@@ -131,6 +161,15 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         }
         const { query, count, offset } = args;
         const result = await handleWebSearch(query, count, offset);
+        return { content: [{ type: 'text', text: result }] };
+      }
+
+      case 'brave_local_search': {
+        if (!isWebSearchArgs(args)) {
+          throw new Error('Invalid arguments for brave_local_search tool');
+        }
+        const { query, count } = args;
+        const result = await handlePoiSearch(query, count);
         return { content: [{ type: 'text', text: result }] };
       }
 
@@ -217,6 +256,43 @@ async function handleWebSearch(query: string, count: number, offset: number) {
   catch (error) {
     throw new Error(`Error searching for "${query}": ${error}`);
   }
+}
+
+async function handlePoiSearch(query: string, count: number) {
+  log(`Searching for "${query}" with count ${count}`, 'debug');
+  try {
+    const results = await braveSearch.webSearch(query, {
+      count,
+      safesearch: SafeSearchLevel.Strict,
+    });
+    if (!results.locations || results.locations?.results.length === 0) {
+      log(`No location results found for "${query} falling back to web search"`);
+      return handleWebSearch(query, count, 0);
+    }
+    const ids = results.locations.results.map(result => result.id);
+    const [poiData, poiDescriptions] = await Promise.all([braveSearch.localPoiSearch(ids), braveSearch.localDescriptionsSearch(ids)]);
+    return formatPoiResults(poiData, poiDescriptions);
+  }
+  catch (error) {
+    throw new Error(`Error searching for "${query}": ${error}`);
+  }
+}
+
+function formatPoiResults(poiData: LocalPoiSearchApiResponse, poiDescriptions: LocalDescriptionsSearchApiResponse) {
+  return (poiData.results || []).map((poi) => {
+    const address = [
+      poi.postal_address?.streetAddress ?? '',
+      poi.postal_address?.addressLocality ?? '',
+      poi.postal_address?.addressRegion ?? '',
+      poi.postal_address?.postalCode ?? '',
+      poi.postal_address?.country ?? '',
+    ].filter(part => part !== '').join(', ') || 'No address found';
+    return `Name: ${poi.title}\n
+    Address: ${address}\n
+    Phone: ${poi.contact || 'No phone number found'}\n
+    Rating: ${poi.rating || 'No rating found'}\n
+    Description: ${poiDescriptions.results.find(description => description.id === poi.id)?.description || 'No description found'}`;
+  }).join('\n\n') || 'No local results found';
 }
 
 // Parse command line arguments
