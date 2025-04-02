@@ -38,7 +38,7 @@ server.tool(
   'Search for images using Brave Search',
   {
     searchTerm: z.string().describe('The term to search the internet for images of'),
-    count: z.number().min(1).max(3).default(1).describe('The number of images to search for'),
+    count: z.number().min(1).max(3).default(1).describe('The number of images to search for, minimum 1, maximum 3'),
   },
   async ({ searchTerm, count }) => {
     log(`Searching for images of "${searchTerm}" with count ${count}`, 'debug');
