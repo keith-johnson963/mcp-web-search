@@ -50,7 +50,7 @@ server.tool(
       for (const result of imageResults.results) {
         content.push({
           type: "text" as const,
-          text: `Title: ${result.title}\nURL: ${result.url}`,
+          text: `Title: ${result.title}\nURL: ${result.properties.url}`,
         })
       } 
       return { content }
