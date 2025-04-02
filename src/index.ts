@@ -1,5 +1,4 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { imageContent } from "fastmcp";
 import { BraveSearch } from "brave-search";
 import { SafeSearchLevel } from "brave-search/dist/types.js";
 import { z } from "zod";
