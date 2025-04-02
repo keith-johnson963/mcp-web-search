@@ -109,18 +109,20 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         }
         const { searchTerm, count } = args;
         if (count < 1 || count > 3) {
-          return {
-            content: [
-              {
-                type: 'text',
-                text: 'count must be less than or equal to 3 and greater than or equal to 1',
-              },
-            ],
-            isError: true,
-          };
+          return { content: [
+            {
+              type: 'text',
+              text: 'count must be less than or equal to 3 and greater than or equal to 1',
+            },
+          ], isError: true };
         }
-        const result = await handleImageSearch(searchTerm, count);
-        return result;
+        const base64Strings = await handleImageSearch(searchTerm, count);
+        const content = base64Strings.map(base64 => ({
+          type: 'image',
+          data: base64,
+          mimeType: 'image/png',
+        }));
+        return { content };
       }
 
       case 'brave_web_search': {
@@ -129,7 +131,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         }
         const { query, count, offset } = args;
         const result = await handleWebSearch(query, count, offset);
-        return result;
+        return { content: [{ type: 'text', text: result }] };
       }
 
       default: {
@@ -164,7 +166,7 @@ function isImageSearchArgs(args: unknown): args is { searchTerm: string; count: 
   );
 }
 
-async function handleImageSearch(searchTerm: string, count: number) {
+async function handleImageSearch(searchTerm: string, count: number): Promise<string[]> {
   log(`Searching for images of "${searchTerm}" with count ${count}`, 'debug');
   try {
     const imageResults = await braveSearch.imageSearch(searchTerm, {
@@ -172,25 +174,16 @@ async function handleImageSearch(searchTerm: string, count: number) {
       safesearch: SafeSearchLevel.Strict,
     });
     log(`Found ${imageResults.results.length} images for "${searchTerm}"`, 'debug');
-    const content = [];
+    const base64Strings = [];
     for (const result of imageResults.results) {
       const base64 = await imageToBase64(result.properties.url);
       log(`Image base64 length: ${base64.length}`, 'debug');
-      content.push({
-        type: 'image' as const,
-        data: base64,
-        mimeType: 'image/png',
-      });
+      base64Strings.push(base64);
     }
-    return { content };
+    return base64Strings;
   }
   catch (error) {
-    console.error(`Error searching for images: ${error}`);
-    return {
-      content: [],
-      isError: true,
-      error: `Error searching for images: ${error}`,
-    };
+    throw new Error(`Error searching for images: ${error}`);
   }
 }
 
@@ -215,24 +208,14 @@ async function handleWebSearch(query: string, count: number, offset: number) {
       offset,
       safesearch: SafeSearchLevel.Strict,
     });
-    if (results.web?.results.length === 0) {
+    if (!results.web || results.web?.results.length === 0) {
       log(`No results found for "${query}"`);
-      return { content: [] };
+      return `No results found for "${query}"`;
     }
-    return {
-      content: results.web?.results.map(result => ({
-        type: 'text',
-        text: `Title: ${result.title}\nURL: ${result.url}\nDescription: ${result.description}`,
-      })) || [],
-    };
+    return results.web.results.map(result => `Title: ${result.title}\nURL: ${result.url}\nDescription: ${result.description}`).join('\n\n');
   }
   catch (error) {
-    console.error(`Error searching for "${query}": ${error}`);
-    return {
-      content: [],
-      isError: true,
-      error: `Error searching for "${query}": ${error}`,
-    };
+    throw new Error(`Error searching for "${query}": ${error}`);
   }
 }
 
