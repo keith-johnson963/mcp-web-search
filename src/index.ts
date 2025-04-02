@@ -5,8 +5,9 @@ import { SafeSearchLevel } from "brave-search/dist/types.js";
 import { z } from "zod";
 import express, { Request, Response } from "express";
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
+import { parseArgs } from "node:util";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 
-const app = express();
 const server = new McpServer({
   name: "Better Brave Search",
   version: "1.0.0",
@@ -95,19 +96,52 @@ server.tool(
   }
 )
 
-// configure the server to use SSE transport
-let transport: SSEServerTransport | null = null;
-
-app.get("/sse", (req: Request, res: Response) => {
-  transport = new SSEServerTransport("/messages", res);
-  server.connect(transport);
-});
-
-app.post("/messages", (req: Request, res: Response) => {
-  if (transport) {
-    transport.handlePostMessage(req, res);
+// Parse command line arguments
+const { values: { useSSE, port } } = parseArgs({
+  options: {
+    useSSE: {
+      type: "boolean",
+      default: false,
+    },
+    port: {
+      type: "string",
+      default: "3033",
+    }
   }
-});
+})
 
-app.listen(3033);
-console.log("Server is running on port 3033");
+async function main() {
+  if (useSSE) {
+    console.log("Running with SSE transport");
+    const portInt = parseInt(port, 10);
+    if (isNaN(portInt)) {
+      console.error(`Invalid port number: ${port}`);
+      process.exit(1);
+    }
+    // configure the server to use SSE transport
+    let transport: SSEServerTransport | null = null;
+    const app = express();
+    app.get("/sse", (req: Request, res: Response) => {
+      transport = new SSEServerTransport("/messages", res);
+      server.connect(transport);
+    });
+
+    app.post("/messages", (req: Request, res: Response) => {
+      if (transport) {
+        transport.handlePostMessage(req, res);
+      }
+    });
+
+    app.listen(3033);
+    console.log("Server is running on port 3033");
+  } else {
+    console.log('Running with STDIO')
+    const transport = new StdioServerTransport();
+    await server.connect(transport);
+  }
+}
+
+main().catch((error) => {
+  console.error("Error in main():", error);
+  process.exit(1);
+})
