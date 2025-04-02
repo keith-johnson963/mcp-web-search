@@ -108,6 +108,17 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           throw new Error('Invalid arguments for brave_image_search tool');
         }
         const { searchTerm, count } = args;
+        if (count < 1 || count > 3) {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: 'count must be less than or equal to 3 and greater than or equal to 1',
+              },
+            ],
+            isError: true,
+          };
+        }
         const result = await handleImageSearch(searchTerm, count);
         return result;
       }
