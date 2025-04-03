@@ -1,27 +1,27 @@
 import type { DayOpeningHours, LocationResult } from 'brave-search/dist/types.js';
 
 export function formatLocationResult(locationResult: LocationResult) {
-  return `Name: ${locationResult.title}\n
-  Address: ${locationResult.postal_address.displayAddress}\n
-  Phone: ${locationResult.contact?.telephone || 'No phone number found'}\n
-  Email: ${locationResult.contact?.email || 'No email found'}\n
-  ${formatOpeningHours(locationResult)}
-  ${formatPriceRange(locationResult)}
-  ${formatRating(locationResult)}
-  ${formatCuisine(locationResult)}`;
+  return `Name: ${locationResult.title}\n`
+    + `Address: ${locationResult.postal_address.displayAddress}\n`
+    + `Phone: ${locationResult.contact?.telephone || 'No phone number found'}\n`
+    + `Email: ${locationResult.contact?.email || 'No email found'}\n`
+    + `${formatOpeningHours(locationResult)}`
+    + `${formatPriceRange(locationResult)}`
+    + `${formatRating(locationResult)}`
+    + `${formatCuisine(locationResult)}`;
 }
 
 function formatOpeningHours(locationResult: LocationResult) {
   if (locationResult.opening_hours) {
-    return `Opening Hours:\n
-    Today: ${formatDayOpeningHours(locationResult.opening_hours.current_day)}
-    Weekly: ${formatDayOpeningHours2D(locationResult.opening_hours.days)}`;
+    return `Opening Hours:\n`
+      + `Today: ${formatDayOpeningHours(locationResult.opening_hours.current_day)}`
+      + `Weekly: ${formatDayOpeningHours2D(locationResult.opening_hours.days)}`;
   }
   return '';
 }
 
 function formatDayOpeningHours2D(dayOpeningHours: DayOpeningHours[][]) {
-  return dayOpeningHours.map(hours => formatDayOpeningHours(hours));
+  return dayOpeningHours.map(hours => formatDayOpeningHours(hours)).join('\n');
 }
 
 function formatDayOpeningHours(dayOpeningHours: DayOpeningHours[]) {
