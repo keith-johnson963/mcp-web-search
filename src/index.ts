@@ -58,10 +58,9 @@ const BRAVE_IMAGE_SEARCH_TOOL: Tool = {
   },
 };
 
-const searchDescription = 'Performs a web search using the Brave Search API, ideal for general queries, news, articles, and online content. '
+const searchDescription = 'Performs a web search using the Brave Search API, ideal for general queries, and online content. '
   + 'Use this for broad information gathering, recent events, or when you need diverse web sources. '
-  + 'Supports pagination, content filtering, and freshness controls. '
-  + 'Maximum 20 results per request, with offset for pagination. ';
+  + 'Maximum 20 results per request ';
 
 const BRAVE_WEB_SEARCH_TOOL: Tool = {
   name: 'brave_web_search',
@@ -114,7 +113,34 @@ const BRAVE_LOCAL_SEARCH_TOOL: Tool = {
   },
 };
 
-const TOOLS: Tool[] = [BRAVE_IMAGE_SEARCH_TOOL, BRAVE_WEB_SEARCH_TOOL, BRAVE_LOCAL_SEARCH_TOOL] as const;
+const newsDescription = 'Searches for news articles using the Brave Search API. '
+  + 'Use this for recent events, trending topics, or specific news stories. '
+  + 'Returns a list of articles with titles, URLs, and descriptions. '
+  + 'Maximum 20 results per request.';
+
+const BRAVE_NEWS_SEARCH_TOOL: Tool = {
+  name: 'brave_news_search',
+  description: newsDescription,
+  inputSchema: {
+    type: 'object',
+    properties: {
+      query: {
+        type: 'string',
+        description: 'The term to search the internet for news articles, trending topics, or recent events',
+      },
+      count: {
+        type: 'integer',
+        minimum: 1,
+        maximum: 20,
+        default: 10,
+        description: 'The number of results to return',
+      },
+    },
+    required: ['query'],
+  },
+};
+
+const TOOLS: Tool[] = [BRAVE_IMAGE_SEARCH_TOOL, BRAVE_WEB_SEARCH_TOOL, BRAVE_LOCAL_SEARCH_TOOL, BRAVE_NEWS_SEARCH_TOOL] as const;
 
 server.setRequestHandler(ListToolsRequestSchema, async () => ({
   tools: TOOLS,
@@ -164,6 +190,15 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         }
         const { query, count = 5 } = args;
         const result = await handlePoiSearch(query, count);
+        return { content: [{ type: 'text', text: result }] };
+      }
+
+      case 'brave_news_search': {
+        if (!isWebSearchArgs(args)) {
+          throw new Error('Invalid arguments for brave_news_search tool');
+        }
+        const { query, count = 10 } = args;
+        const result = await handleNewsSearch(query, count);
         return { content: [{ type: 'text', text: result }] };
       }
 
@@ -272,6 +307,33 @@ function formatLocationResults(locationResults: LocationResult[]) {
   return locationResults.map((location) => {
     return formatLocationResult(location);
   }).join('\n\n') || 'No local results found';
+}
+
+async function handleNewsSearch(query: string, count: number = 10) {
+  log(`Searching for news articles with query "${query}" and count ${count}`, 'debug');
+  try {
+    const results = await braveSearch.webSearch(query, {
+      count,
+      safesearch: SafeSearchLevel.Strict,
+      result_filter: 'news',
+    });
+    if (!results.news || results.news?.results.length === 0) {
+      log(`No news results found for "${query}"`);
+      return `No news results found for "${query}"`;
+    }
+    return results.news.results
+      .map(result =>
+        `Title: ${result.title}\n`
+        + `URL: ${result.url}\n`
+        + `Age: ${result.age}\n`
+        + `Description: ${result.description}\n`
+        + `Breaking: ${result.breaking}\n`,
+      )
+      .join('\n\n');
+  }
+  catch (error) {
+    throw new Error(`Error searching for news articles with query "${query}": ${error}`);
+  }
 }
 
 // Parse command line arguments
