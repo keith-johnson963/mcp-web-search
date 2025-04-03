@@ -312,16 +312,14 @@ function formatLocationResults(locationResults: LocationResult[]) {
 async function handleNewsSearch(query: string, count: number = 10) {
   log(`Searching for news articles with query "${query}" and count ${count}`, 'debug');
   try {
-    const results = await braveSearch.webSearch(query, {
+    const newsResult = await braveSearch.newsSearch(query, {
       count,
-      safesearch: SafeSearchLevel.Strict,
-      result_filter: 'news',
     });
-    if (!results.news || results.news?.results.length === 0) {
+    if (!newsResult.results || newsResult.results.length === 0) {
       log(`No news results found for "${query}"`);
       return `No news results found for "${query}"`;
     }
-    return results.news.results
+    return newsResult.results
       .map(result =>
         `Title: ${result.title}\n`
         + `URL: ${result.url}\n`
