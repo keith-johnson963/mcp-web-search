@@ -1,5 +1,5 @@
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
-import type { LocalDescriptionsSearchApiResponse, LocalPoiSearchApiResponse, LocationResult } from 'brave-search/dist/types.js';
+import type { LocationResult } from 'brave-search/dist/types.js';
 import type { Request, Response } from 'express';
 import process from 'node:process';
 import { parseArgs } from 'node:util';
@@ -80,13 +80,6 @@ const BRAVE_WEB_SEARCH_TOOL: Tool = {
         default: 10,
         description: 'The number of results to return',
       },
-      offset: {
-        type: 'integer',
-        minimum: 0,
-        maximum: 9,
-        default: 0,
-        description: 'The offset for pagination',
-      },
     },
     required: ['query'],
   },
@@ -115,13 +108,6 @@ const BRAVE_LOCAL_SEARCH_TOOL: Tool = {
         type: 'number',
         description: 'Number of results (1-20, default 5)',
         default: 5,
-      },
-      offset: {
-        type: 'integer',
-        minimum: 0,
-        maximum: 9,
-        default: 0,
-        description: 'The offset for pagination',
       },
     },
     required: ['query'],
@@ -167,8 +153,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         if (!isWebSearchArgs(args)) {
           throw new Error('Invalid arguments for brave_web_search tool');
         }
-        const { query, count, offset } = args;
-        const result = await handleWebSearch(query, count, offset);
+        const { query, count = 10 } = args;
+        const result = await handleWebSearch(query, count);
         return { content: [{ type: 'text', text: result }] };
       }
 
@@ -176,7 +162,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         if (!isWebSearchArgs(args)) {
           throw new Error('Invalid arguments for brave_local_search tool');
         }
-        const { query, count } = args;
+        const { query, count = 5 } = args;
         const result = await handlePoiSearch(query, count);
         return { content: [{ type: 'text', text: result }] };
       }
@@ -213,7 +199,7 @@ function isImageSearchArgs(args: unknown): args is { searchTerm: string; count: 
   );
 }
 
-async function handleImageSearch(searchTerm: string, count: number): Promise<string[]> {
+async function handleImageSearch(searchTerm: string, count: number = 3): Promise<string[]> {
   log(`Searching for images of "${searchTerm}" with count ${count}`, 'debug');
   try {
     const imageResults = await braveSearch.imageSearch(searchTerm, {
@@ -234,20 +220,16 @@ async function handleImageSearch(searchTerm: string, count: number): Promise<str
   }
 }
 
-function isWebSearchArgs(args: unknown): args is { query: string; count: number; offset: number } {
+function isWebSearchArgs(args: unknown): args is { query: string; count?: number } {
   return (
     typeof args === 'object'
     && args !== null
     && 'query' in args
     && typeof (args as { query: string }).query === 'string'
-    && 'count' in args
-    && typeof (args as { count: number }).count === 'number'
-    && 'offset' in args
-    && typeof (args as { offset: number }).offset === 'number'
   );
 }
 
-async function handleWebSearch(query: string, count: number, offset: number) {
+async function handleWebSearch(query: string, count: number = 10, offset: number = 0) {
   log(`Searching for "${query}" with count ${count} and offset ${offset}`, 'debug');
   try {
     const results = await braveSearch.webSearch(query, {
@@ -266,7 +248,7 @@ async function handleWebSearch(query: string, count: number, offset: number) {
   }
 }
 
-async function handlePoiSearch(query: string, count: number) {
+async function handlePoiSearch(query: string, count: number = 5) {
   log(`Poi Searching for "${query}" with count ${count}`, 'debug');
   try {
     const results = await braveSearch.webSearch(query, {
