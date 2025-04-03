@@ -1,5 +1,5 @@
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
-import type { LocalDescriptionsSearchApiResponse, LocalPoiSearchApiResponse } from 'brave-search/dist/types.js';
+import type { LocalDescriptionsSearchApiResponse, LocalPoiSearchApiResponse, LocationResult } from 'brave-search/dist/types.js';
 import type { Request, Response } from 'express';
 import process from 'node:process';
 import { parseArgs } from 'node:util';
@@ -11,6 +11,7 @@ import { BraveSearch } from 'brave-search';
 import { SafeSearchLevel } from 'brave-search/dist/types.js';
 import express from 'express';
 import imageToBase64 from 'image-to-base64';
+import { formatLocationResult } from './utils.js';
 
 const server = new Server(
   {
@@ -277,29 +278,17 @@ async function handlePoiSearch(query: string, count: number) {
       log(`No location results found for "${query} falling back to web search"`);
       return handleWebSearch(query, count, 0);
     }
-    const ids = results.locations.results.map(result => result.id);
-    const [poiData, poiDescriptions] = await Promise.all([braveSearch.localPoiSearch(ids), braveSearch.localDescriptionsSearch(ids)]);
-    return formatPoiResults(poiData, poiDescriptions);
+
+    return formatLocationResults(results.locations.results);
   }
   catch (error) {
     throw new Error(`Error searching for "${query}": ${error}`);
   }
 }
 
-function formatPoiResults(poiData: LocalPoiSearchApiResponse, poiDescriptions: LocalDescriptionsSearchApiResponse) {
-  return (poiData.results || []).map((poi) => {
-    const address = [
-      poi.postal_address?.streetAddress ?? '',
-      poi.postal_address?.addressLocality ?? '',
-      poi.postal_address?.addressRegion ?? '',
-      poi.postal_address?.postalCode ?? '',
-      poi.postal_address?.country ?? '',
-    ].filter(part => part !== '').join(', ') || 'No address found';
-    return `Name: ${poi.title}\n
-    Address: ${address}\n
-    Phone: ${poi.contact || 'No phone number found'}\n
-    Rating: ${poi.rating || 'No rating found'}\n
-    Description: ${poiDescriptions.results.find(description => description.id === poi.id)?.description || 'No description found'}`;
+function formatLocationResults(locationResults: LocationResult[]) {
+  return locationResults.map((location) => {
+    return formatLocationResult(location);
   }).join('\n\n') || 'No local results found';
 }
 
