@@ -14,14 +14,14 @@ export function formatLocationResult(locationResult: LocationResult) {
 function formatOpeningHours(locationResult: LocationResult) {
   if (locationResult.opening_hours) {
     return `Opening Hours:\n
-    \tToday: ${formatDayOpeningHours(locationResult.opening_hours.current_day)}\n
-    \tWeekly: ${formatDayOpeningHours2D(locationResult.opening_hours.days)}`;
+    Today: ${formatDayOpeningHours(locationResult.opening_hours.current_day)}
+    Weekly: ${formatDayOpeningHours2D(locationResult.opening_hours.days)}`;
   }
   return '';
 }
 
 function formatDayOpeningHours2D(dayOpeningHours: DayOpeningHours[][]) {
-  return dayOpeningHours.map(hours => formatDayOpeningHours(hours)).join('\n');
+  return dayOpeningHours.map(hours => formatDayOpeningHours(hours));
 }
 
 function formatDayOpeningHours(dayOpeningHours: DayOpeningHours[]) {

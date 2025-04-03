@@ -278,7 +278,7 @@ async function handlePoiSearch(query: string, count: number) {
       log(`No location results found for "${query} falling back to web search"`);
       return handleWebSearch(query, count, 0);
     }
-
+    log(`Found ${results.locations.results.length} location results for "${query}"`, 'debug');
     return formatLocationResults(results.locations.results);
   }
   catch (error) {
