@@ -250,6 +250,7 @@ async function handleImageSearch(searchTerm: string, count: number = 3): Promise
     return base64Strings;
   }
   catch (error) {
+    log(`Error searching for images: ${error}`, 'error');
     throw new Error(`Error searching for images: ${error}`);
   }
 }
@@ -278,6 +279,7 @@ async function handleWebSearch(query: string, count: number = 10, offset: number
     return results.web.results.map(result => `Title: ${result.title}\nURL: ${result.url}\nDescription: ${result.description}`).join('\n\n');
   }
   catch (error) {
+    log(`Error searching for "${query}": ${error}`, 'error');
     throw new Error(`Error searching for "${query}": ${error}`);
   }
 }
@@ -311,6 +313,7 @@ async function handlePoiSearch(query: string, count: number = 5) {
     return formattedText.join('\n\n') || 'No local results found';
   }
   catch (error) {
+    log(`Error searching for "${query}": ${error}`, 'error');
     throw new Error(`Error searching for "${query}": ${error}`);
   }
 }
@@ -335,6 +338,7 @@ async function handleNewsSearch(query: string, count: number = 10) {
       .join('\n\n');
   }
   catch (error) {
+    log(`Error searching for news articles with query "${query}": ${error}`, 'error');
     throw new Error(`Error searching for news articles with query "${query}": ${error}`);
   }
 }
@@ -390,7 +394,12 @@ function log(
   level: 'error' | 'debug' | 'info' | 'notice' | 'warning' | 'critical' | 'alert' | 'emergency' = 'info',
 ) {
   if (useSSE) {
-    console.log(message);
+    if (level === 'error') {
+      console.error(message);
+    }
+    else {
+      console.log(message);
+    }
   }
   else {
     server.sendLoggingMessage({
