@@ -324,8 +324,7 @@ async function handleNewsSearch(query: string, count: number = 10) {
         `Title: ${result.title}\n`
         + `URL: ${result.url}\n`
         + `Age: ${result.age}\n`
-        + `Description: ${result.description}\n`
-        + `Breaking: ${result.breaking}\n`,
+        + `Description: ${result.description}\n`,
       )
       .join('\n\n');
   }
