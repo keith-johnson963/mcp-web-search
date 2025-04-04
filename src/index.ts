@@ -1,5 +1,4 @@
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
-import type { LocationResult } from 'brave-search/dist/types.js';
 import type { Request, Response } from 'express';
 import process from 'node:process';
 import { parseArgs } from 'node:util';
@@ -11,7 +10,7 @@ import { BraveSearch } from 'brave-search';
 import { SafeSearchLevel } from 'brave-search/dist/types.js';
 import express from 'express';
 import imageToBase64 from 'image-to-base64';
-import { formatLocationResult } from './utils.js';
+import { formatPoiResults } from './utils.js';
 
 const server = new Server(
   {
@@ -295,18 +294,25 @@ async function handlePoiSearch(query: string, count: number = 5) {
       log(`No location results found for "${query} falling back to web search"`);
       return handleWebSearch(query, count, 0);
     }
-    log(`Found ${results.locations.results.length} location results for "${query}"`, 'debug');
-    return formatLocationResults(results.locations.results);
+    const ids = results.locations.results.map(result => result.id);
+    log(`Found ${ids.length} location IDs for "${query}"`, 'debug');
+    // Break ids into chunks of 20 (API limit)
+    const idChunks = [];
+    for (let i = 0; i < ids.length; i += 20) {
+      idChunks.push(ids.slice(i, i + 20));
+    }
+    const formattedText = [];
+    for (const idChunk of idChunks) {
+      const localPoiSearchApiResponse = await braveSearch.localPoiSearch(idChunk);
+      const localDescriptionsSearchApiResponse = await braveSearch.localDescriptionsSearch(idChunk);
+      const text = formatPoiResults(localPoiSearchApiResponse, localDescriptionsSearchApiResponse);
+      formattedText.push(text);
+    }
+    return formattedText.join('\n\n') || 'No local results found';
   }
   catch (error) {
     throw new Error(`Error searching for "${query}": ${error}`);
   }
-}
-
-function formatLocationResults(locationResults: LocationResult[]) {
-  return locationResults.map((location) => {
-    return formatLocationResult(location);
-  }).join('\n\n') || 'No local results found';
 }
 
 async function handleNewsSearch(query: string, count: number = 10) {
