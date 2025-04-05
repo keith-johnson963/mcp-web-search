@@ -22,7 +22,7 @@
     "build"
   ],
   "scripts": {
-    "build": "tsc && chmod 755 build/index.js"
+    "build": "tsc && shx chmod +x build/index.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.8.0",
@@ -37,6 +37,7 @@
     "@types/node": "^22.13.14",
     "eslint": "^9.23.0",
     "eslint-plugin-format": "^1.0.1",
+    "shx": "^0.4.0",
     "typescript": "^5.8.2"
   }
 }
