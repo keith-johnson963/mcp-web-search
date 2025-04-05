@@ -1,5 +1,5 @@
 {
-  "name": "brave-search",
+  "name": "brave-search-mcp",
   "type": "module",
   "version": "1.0.0",
   "description": "MCP Server that uses Brave Search API to search for images, general web search, news and points of interest.",
@@ -29,8 +29,7 @@
     "@types/image-to-base64": "^2.1.2",
     "brave-search": "^0.7.0",
     "express": "^5.1.0",
-    "image-to-base64": "^2.2.0",
-    "zod": "^3.24.2"
+    "image-to-base64": "^2.2.0"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^4.11.0",
