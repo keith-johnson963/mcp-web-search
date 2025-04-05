@@ -105,6 +105,8 @@ const BRAVE_LOCAL_SEARCH_TOOL: Tool = {
       count: {
         type: 'number',
         description: 'Number of results (1-20, default 5)',
+        minimum: 1,
+        maximum: 20,
         default: 5,
       },
     },
