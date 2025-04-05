@@ -1,4 +1,4 @@
-# Better Brave Search MCP Server
+# Brave Search MCP Server
 
 An MCP Server implementation that integrates the [Brave Search API](https://brave.com/search/api/), providing, Web Search, Local Points of Interest Search, Image Search and News Search capabilities
 
