@@ -15,7 +15,7 @@ import { formatPoiResults } from './utils.js';
 const server = new Server(
   {
     name: 'Better Brave Search',
-    version: '1.0.0',
+    version: '0.6.0',
   },
   {
     capabilities: {
