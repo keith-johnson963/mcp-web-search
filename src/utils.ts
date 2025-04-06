@@ -18,15 +18,15 @@ export function formatPoiResults(poiData: LocalPoiSearchApiResponse, poiDesc: Lo
 
 export function formatVideoResults(results: MCPVideoResult[]) {
   return (results || []).map((video) => {
-    return `Title: ${video.title} `
-      + `URL: ${video.url} `
-      + `Description: ${video.description} `
-      + `Age: ${video.age} `
-      + `Duration: ${video.video.duration} `
-      + `Views: ${video.video.views} `
-      + `Creator: ${video.video.creator} `
+    return `Title: ${video.title}\n`
+      + `URL: ${video.url}\n`
+      + `Description: ${video.description}\n`
+      + `Age: ${video.age}\n`
+      + `Duration: ${video.video.duration}\n`
+      + `Views: ${video.video.views}\n`
+      + `Creator: ${video.video.creator}\n`
       + `${('requires_subscription' in video.video)
-        ? (video.video.requires_subscription ? 'Requires subscription' : 'No subscription')
+        ? (video.video.requires_subscription ? 'Requires subscription\n' : 'No subscription\n')
         : ''} `
         + `${('tags' in video.video && video.video.tags)
           ? (`Tags: ${video.video.tags.join(', ')}`)
