@@ -1,4 +1,5 @@
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
+import type { Profile, Query, VideoData, VideoResult } from 'brave-search/dist/types.js';
 import type { Request, Response } from 'express';
 import process from 'node:process';
 import { parseArgs } from 'node:util';
@@ -11,6 +12,57 @@ import { SafeSearchLevel } from 'brave-search/dist/types.js';
 import express from 'express';
 import imageToBase64 from 'image-to-base64';
 import { formatPoiResults } from './utils.js';
+
+/**
+ * https://api-dashboard.search.brave.com/app/documentation/video-search/responses#VideoData
+ */
+interface MCPVideoData extends VideoData {
+  /**
+   * Whether the video requires a subscription.
+   * @type {boolean}
+   */
+  requires_subscription?: boolean;
+  /**
+   * A list of tags relevant to the video.
+   * @type {string[]}
+   */
+  tags?: string[];
+  /**
+   * A profile associated with the video.
+   * @type {Profile}
+   */
+  author?: Profile;
+}
+
+/**
+ * https://api-dashboard.search.brave.com/app/documentation/video-search/responses#VideoResult
+ */
+interface MCPVideoResult extends Omit<VideoResult, 'video'> {
+  video: MCPVideoData;
+}
+
+/**
+ * Response from the Brave Search API for video search.
+ *
+ * https://api-dashboard.search.brave.com/app/documentation/video-search/responses
+ */
+interface VideoSearchApiResponse {
+  /**
+   * The type of search API result. The value is always video.
+   * @type {string}
+   */
+  type: 'video';
+  /**
+   * Video search query string.
+   * @type {Query}
+   */
+  query: Query;
+  /**
+   * The list of video results for the given query.
+   * @type {MCPVideoResult[]}
+   */
+  results: MCPVideoResult[];
+}
 
 const server = new Server(
   {
