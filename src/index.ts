@@ -1,17 +1,19 @@
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import type { Profile, Query, VideoData, VideoResult } from 'brave-search/dist/types.js';
 import type { Request, Response } from 'express';
+import { format } from 'node:path';
 import process from 'node:process';
 import { parseArgs } from 'node:util';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
+import axios from 'axios';
 import { BraveSearch } from 'brave-search';
 import { SafeSearchLevel } from 'brave-search/dist/types.js';
 import express from 'express';
 import imageToBase64 from 'image-to-base64';
-import { formatPoiResults } from './utils.js';
+import { formatPoiResults, formatVideoResults } from './utils.js';
 
 /**
  * https://api-dashboard.search.brave.com/app/documentation/video-search/responses#VideoData
@@ -37,7 +39,7 @@ interface MCPVideoData extends VideoData {
 /**
  * https://api-dashboard.search.brave.com/app/documentation/video-search/responses#VideoResult
  */
-interface MCPVideoResult extends Omit<VideoResult, 'video'> {
+export interface MCPVideoResult extends Omit<VideoResult, 'video'> {
   video: MCPVideoData;
 }
 
@@ -193,7 +195,32 @@ const BRAVE_NEWS_SEARCH_TOOL: Tool = {
   },
 };
 
-const TOOLS: Tool[] = [BRAVE_IMAGE_SEARCH_TOOL, BRAVE_WEB_SEARCH_TOOL, BRAVE_LOCAL_SEARCH_TOOL, BRAVE_NEWS_SEARCH_TOOL] as const;
+const videoSearchDescription = 'Searches for videos using the Brave Search API. '
+  + 'Use this for video content, tutorials, or any visual media. ';
+
+const BRAVE_VIDEO_SEARCH_TOOL: Tool = {
+  name: 'brave_video_search',
+  description: videoSearchDescription,
+  inputSchema: {
+    type: 'object',
+    properties: {
+      query: {
+        type: 'string',
+        description: 'The term to search the internet for videos',
+      },
+      count: {
+        type: 'integer',
+        minimum: 1,
+        maximum: 20,
+        default: 10,
+        description: 'The number of results to return',
+      },
+    },
+    required: ['query'],
+  },
+};
+
+const TOOLS: Tool[] = [BRAVE_IMAGE_SEARCH_TOOL, BRAVE_WEB_SEARCH_TOOL, BRAVE_LOCAL_SEARCH_TOOL, BRAVE_NEWS_SEARCH_TOOL, BRAVE_VIDEO_SEARCH_TOOL] as const;
 
 server.setRequestHandler(ListToolsRequestSchema, async () => ({
   tools: TOOLS,
@@ -253,6 +280,15 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const { query, count = 10 } = args;
         const result = await handleNewsSearch(query, count);
         return { content: [{ type: 'text', text: result }] };
+      }
+
+      case 'brave_video_search' : {
+        if (!isWebSearchArgs(args)) {
+          throw new Error('Invalid arguments for brave_video_search tool');
+        }
+        const { query, count = 10 } = args;
+        const results = await handleVideoSearch(query, count);
+        return { content: [{ type: 'text', text: results }] };
       }
 
       default: {
@@ -394,6 +430,31 @@ async function handleNewsSearch(query: string, count: number = 10) {
   catch (error) {
     log(`Error searching for news articles with query "${query}": ${error}`, 'error');
     throw new Error(`Error searching for news articles with query "${query}": ${error}`);
+  }
+}
+
+async function handleVideoSearch(query: string, count: number = 10) {
+  log(`Searching for videos with query "${query}" and count ${count}`, 'debug');
+  try {
+    const response = await axios.get<VideoSearchApiResponse>(
+      'https://api.search.brave.com/res/v1/videos/search',
+      {
+        headers: {
+          'Accept': 'application/json',
+          'Accept-Encoding': 'gzip',
+          'X-Subscription-Token': BRAVE_API_KEY,
+        },
+        params: {
+          q: query,
+          count,
+        },
+      },
+    );
+    return formatVideoResults(response.data.results);
+  }
+  catch (error) {
+    log(`Error searching for videos with query "${query}": ${error}`, 'error');
+    throw new Error(`Error searching for videos with query "${query}": ${error}`);
   }
 }
 
