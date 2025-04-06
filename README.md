@@ -1,12 +1,13 @@
 # Brave Search MCP Server
 
-An MCP Server implementation that integrates the [Brave Search API](https://brave.com/search/api/), providing, Web Search, Local Points of Interest Search, Image Search and News Search capabilities
+An MCP Server implementation that integrates the [Brave Search API](https://brave.com/search/api/), providing, Web Search, Local Points of Interest Search, Video Search, Image Search and News Search capabilities
 
 ## Features
 
 - **Web Search**: Perform a regular search on the web
 - **Image Search**: Search the web for images
 - **News Search**: Search the web for news
+- **Video Search**: Search the web for videos
 - **Local Points of Interest Search**: Search for local physical locations, businesses, restaurants, services, etc
 
 ## Tools
@@ -40,6 +41,13 @@ An MCP Server implementation that integrates the [Brave Search API](https://brav
     - `count` (number, optional): The number of results to return (max 20, default 5)
   - **REQUIRES** subscription to the Pro api plan
   - Falls back to brave_web_search if no location results are found
+
+- **brave_video_search**
+
+  - Search the web for videos
+  - Inputs:
+    - `query`: (string): The term to search for videos
+    - `count`: (number, optional): The number of videos to return (max 20, default 10)
 
 ## Configuration
 
