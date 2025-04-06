@@ -64,13 +64,29 @@ npm run build
 Add this to your `claude_desktop_config.json`:
 
 ```json
-"brave-search": {
-  "command": "node",
-  "args": [
-    "C:\\ABSOLUTE\\PATH\\build\\index.js"
-  ],
-  "env": {
-    "BRAVE_API_KEY": "YOUR API KEY HERE"
+{
+  "mcp-servers": {
+    "brave-search": {
+      "command": "node",
+      "args": [
+        "C:\\ABSOLUTE\\PATH\\build\\index.js"
+      ],
+      "env": {
+        "BRAVE_API_KEY": "YOUR API KEY HERE"
+      }
+    }
   }
 }
+```
+
+### Usage with LibreChat
+
+Add this to librechat.yaml
+
+```yaml
+brave-search:
+  command: sh
+  args:
+    - -c
+    - BRAVE_API_KEY=API KEY npx -y brave-search-mcp
 ```
