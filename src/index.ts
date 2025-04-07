@@ -1,7 +1,6 @@
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import type { Profile, Query, VideoData, VideoResult } from 'brave-search/dist/types.js';
 import type { Request, Response } from 'express';
-import { format } from 'node:path';
 import process from 'node:process';
 import { parseArgs } from 'node:util';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
