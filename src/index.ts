@@ -1,5 +1,4 @@
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
-import type { Profile, Query, VideoData, VideoResult } from 'brave-search/dist/types.js';
 import type { Request, Response } from 'express';
 import process from 'node:process';
 import { parseArgs } from 'node:util';
@@ -7,63 +6,11 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
-import axios from 'axios';
 import { BraveSearch } from 'brave-search';
 import { SafeSearchLevel } from 'brave-search/dist/types.js';
 import express from 'express';
 import imageToBase64 from 'image-to-base64';
 import { formatPoiResults, formatVideoResults } from './utils.js';
-
-/**
- * https://api-dashboard.search.brave.com/app/documentation/video-search/responses#VideoData
- */
-interface MCPVideoData extends VideoData {
-  /**
-   * Whether the video requires a subscription.
-   * @type {boolean}
-   */
-  requires_subscription?: boolean;
-  /**
-   * A list of tags relevant to the video.
-   * @type {string[]}
-   */
-  tags?: string[];
-  /**
-   * A profile associated with the video.
-   * @type {Profile}
-   */
-  author?: Profile;
-}
-
-/**
- * https://api-dashboard.search.brave.com/app/documentation/video-search/responses#VideoResult
- */
-export interface MCPVideoResult extends Omit<VideoResult, 'video'> {
-  video: MCPVideoData;
-}
-
-/**
- * Response from the Brave Search API for video search.
- *
- * https://api-dashboard.search.brave.com/app/documentation/video-search/responses
- */
-interface VideoSearchApiResponse {
-  /**
-   * The type of search API result. The value is always video.
-   * @type {string}
-   */
-  type: 'video';
-  /**
-   * Video search query string.
-   * @type {Query}
-   */
-  query: Query;
-  /**
-   * The list of video results for the given query.
-   * @type {MCPVideoResult[]}
-   */
-  results: MCPVideoResult[];
-}
 
 const server = new Server(
   {
@@ -435,21 +382,15 @@ async function handleNewsSearch(query: string, count: number = 10) {
 async function handleVideoSearch(query: string, count: number = 10) {
   log(`Searching for videos with query "${query}" and count ${count}`, 'debug');
   try {
-    const response = await axios.get<VideoSearchApiResponse>(
-      'https://api.search.brave.com/res/v1/videos/search',
-      {
-        headers: {
-          'Accept': 'application/json',
-          'Accept-Encoding': 'gzip',
-          'X-Subscription-Token': BRAVE_API_KEY,
-        },
-        params: {
-          q: query,
-          count,
-        },
-      },
-    );
-    return formatVideoResults(response.data.results);
+    const videoSearchResults = await braveSearch.videoSearch(query, {
+      count,
+      safesearch: SafeSearchLevel.Moderate,
+    });
+    if (!videoSearchResults.results || videoSearchResults.results.length === 0) {
+      log(`No video results found for "${query}"`);
+      return `No video results found for "${query}"`;
+    }
+    return formatVideoResults(videoSearchResults.results);
   }
   catch (error) {
     log(`Error searching for videos with query "${query}": ${error}`, 'error');
