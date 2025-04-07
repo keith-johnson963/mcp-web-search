@@ -166,10 +166,8 @@ const BRAVE_VIDEO_SEARCH_TOOL: Tool = {
   },
 };
 
-const TOOLS: Tool[] = [BRAVE_IMAGE_SEARCH_TOOL, BRAVE_WEB_SEARCH_TOOL, BRAVE_LOCAL_SEARCH_TOOL, BRAVE_NEWS_SEARCH_TOOL, BRAVE_VIDEO_SEARCH_TOOL] as const;
-
 server.setRequestHandler(ListToolsRequestSchema, async () => ({
-  tools: TOOLS,
+  tools: [BRAVE_IMAGE_SEARCH_TOOL, BRAVE_WEB_SEARCH_TOOL, BRAVE_LOCAL_SEARCH_TOOL, BRAVE_NEWS_SEARCH_TOOL, BRAVE_VIDEO_SEARCH_TOOL],
 }));
 
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
