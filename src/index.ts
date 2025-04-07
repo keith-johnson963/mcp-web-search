@@ -326,7 +326,7 @@ async function handlePoiSearch(query: string, count: number = 5) {
       result_filter: 'locations',
     });
     if (!results.locations || results.locations?.results.length === 0) {
-      log(`No location results found for "${query} falling back to web search"`);
+      log(`No location results found for "${query}" falling back to web search. Make sure your API Plan is at least "Pro"`);
       return handleWebSearch(query, count, 0);
     }
     const ids = results.locations.results.map(result => result.id);
