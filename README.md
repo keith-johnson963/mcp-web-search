@@ -75,9 +75,10 @@ Add this to your `claude_desktop_config.json`:
 {
   "mcp-servers": {
     "brave-search": {
-      "command": "node",
+      "command": "npx",
       "args": [
-        "C:\\ABSOLUTE\\PATH\\build\\index.js"
+        "-y",
+        "brave-search-mcp"
       ],
       "env": {
         "BRAVE_API_KEY": "YOUR API KEY HERE"
