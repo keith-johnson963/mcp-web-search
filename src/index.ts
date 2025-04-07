@@ -14,7 +14,8 @@ import { formatPoiResults, formatVideoResults } from './utils.js';
 
 const server = new Server(
   {
-    name: 'Better Brave Search',
+    name: 'Brave Search MCP Server',
+    description: 'A server that provides tools for searching the web, images, videos, and local businesses using the Brave Search API.',
     version: '0.6.0',
   },
   {
