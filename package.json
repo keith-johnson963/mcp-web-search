@@ -2,12 +2,16 @@
   "name": "brave-search-mcp",
   "type": "module",
   "version": "0.6.0",
-  "description": "MCP Server that uses Brave Search API to search for images, general web search, news and points of interest.",
+  "description": "MCP Server that uses Brave Search API to search for images, general web search, video, news and points of interest.",
   "author": "mike.chao.one@gmail.com",
   "license": "GPL-3.0-or-later",
+  "homepage": "https://github.com/mikechao/brave-search-mcp",
   "repository": {
     "type": "git",
     "url": "https://github.com/mikechao/brave-search-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mikechao/brave-search-mcp/issues"
   },
   "keywords": [
     "brave",
@@ -18,17 +22,17 @@
     "brave-search-api",
     "brave-search"
   ],
-  "main": "./build/index.js",
+  "main": "dist/index.js",
   "bin": {
-    "brave-search-mcp": "./build/index.js"
+    "brave-search-mcp": "dist/index.js"
   },
   "files": [
     "LICENSE",
     "README.md",
-    "build"
+    "dist"
   ],
   "scripts": {
-    "build": "tsc && shx chmod +x build/index.js",
+    "build": "tsc && shx chmod +x dist/*.js",
     "prepare": "npm run build"
   },
   "dependencies": {
