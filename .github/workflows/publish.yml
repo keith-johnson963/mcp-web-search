@@ -6,13 +6,16 @@ jobs:
   publish-to-npm:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '20.19.0'
           registry-url: 'https://registry.npmjs.org/'
+          cache: 'npm'
       - name: Install dependencies and build 🔧
-        run: npm ci && npm run build
+        run: |
+          npm ci
+          npm run build || (echo "Build failed" && exit 1)
       - name: Publish to NPM 📦
         run: npm publish
         env:
