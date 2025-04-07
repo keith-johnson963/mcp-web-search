@@ -99,3 +99,11 @@ brave-search:
     - -c
     - BRAVE_API_KEY=API KEY npx -y brave-search-mcp
 ```
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## License
+
+This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
