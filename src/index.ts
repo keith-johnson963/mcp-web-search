@@ -190,13 +190,20 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             },
           ], isError: true };
         }
-        const base64Strings = await handleImageSearch(searchTerm, count);
-        const content = base64Strings.map(base64 => ({
-          type: 'image',
-          data: base64,
-          mimeType: 'image/png',
-        }));
-        return { content };
+        const { titles, base64Strings } = await handleImageSearch(searchTerm, count);
+        const results = [];
+        for (const [index, title] of titles.entries()) {
+          results.push({
+            type: 'text',
+            text: `${title}`,
+          });
+          results.push({
+            type: 'image',
+            data: base64Strings[index],
+            mimeType: 'image/png',
+          });
+        }
+        return { content: results };
       }
 
       case 'brave_web_search': {
@@ -267,7 +274,7 @@ function isImageSearchArgs(args: unknown): args is { searchTerm: string; count: 
   );
 }
 
-async function handleImageSearch(searchTerm: string, count: number = 3): Promise<string[]> {
+async function handleImageSearch(searchTerm: string, count: number = 3): Promise<{ titles: string[]; base64Strings: string[] }> {
   log(`Searching for images of "${searchTerm}" with count ${count}`, 'debug');
   try {
     const imageResults = await braveSearch.imageSearch(searchTerm, {
@@ -276,12 +283,14 @@ async function handleImageSearch(searchTerm: string, count: number = 3): Promise
     });
     log(`Found ${imageResults.results.length} images for "${searchTerm}"`, 'debug');
     const base64Strings = [];
+    const titles = [];
     for (const result of imageResults.results) {
       const base64 = await imageToBase64(result.properties.url);
       log(`Image base64 length: ${base64.length}`, 'debug');
+      titles.push(result.title);
       base64Strings.push(base64);
     }
-    return base64Strings;
+    return { titles, base64Strings };
   }
   catch (error) {
     log(`Error searching for images: ${error}`, 'error');
