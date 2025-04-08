@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import type { Request, Response } from 'express';
 import process from 'node:process';
