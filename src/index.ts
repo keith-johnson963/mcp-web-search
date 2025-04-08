@@ -5,7 +5,7 @@ import { parseArgs } from 'node:util';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
+import { CallToolRequestSchema, ListResourcesRequestSchema, ListToolsRequestSchema, ReadResourceRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { BraveSearch } from 'brave-search';
 import { SafeSearchLevel } from 'brave-search/dist/types.js';
 import express from 'express';
@@ -20,6 +20,7 @@ const server = new Server(
   },
   {
     capabilities: {
+      resources: {},
       tools: {},
       logging: {},
     },
@@ -34,6 +35,8 @@ if (!BRAVE_API_KEY) {
 }
 
 const braveSearch = new BraveSearch(BRAVE_API_KEY);
+
+const imageByTitle = new Map<string, string>();
 
 const BRAVE_IMAGE_SEARCH_TOOL: Tool = {
   name: 'brave_image_search',
@@ -166,6 +169,38 @@ const BRAVE_VIDEO_SEARCH_TOOL: Tool = {
   },
 };
 
+// setup request handlers
+server.setRequestHandler(ListResourcesRequestSchema, async () => ({
+  resources: [
+    ...Array.from(imageByTitle.keys()).map(title => ({
+      uri: `brave-image://${title}`,
+      mimeType: 'image/png',
+      name: `${title}`,
+    })),
+  ],
+}));
+
+server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
+  const uri = request.params.uri.toString();
+  if (uri.startsWith('brave-image://')) {
+    const title = uri.split('://')[1];
+    const image = imageByTitle.get(title);
+    if (image) {
+      return {
+        contents: [{
+          uri,
+          mimeType: 'image/png',
+          blob: image,
+        }],
+      };
+    }
+  }
+  return {
+    content: [{ type: 'text', text: `Resource not found: ${uri}` }],
+    isError: true,
+  };
+});
+
 server.setRequestHandler(ListToolsRequestSchema, async () => ({
   tools: [BRAVE_IMAGE_SEARCH_TOOL, BRAVE_WEB_SEARCH_TOOL, BRAVE_LOCAL_SEARCH_TOOL, BRAVE_NEWS_SEARCH_TOOL, BRAVE_VIDEO_SEARCH_TOOL],
 }));
@@ -289,7 +324,11 @@ async function handleImageSearch(searchTerm: string, count: number = 3): Promise
       log(`Image base64 length: ${base64.length}`, 'debug');
       titles.push(result.title);
       base64Strings.push(base64);
+      imageByTitle.set(result.title, base64);
     }
+    server.notification({
+      method: 'notifications/resources/list_changed',
+    });
     return { titles, base64Strings };
   }
   catch (error) {
