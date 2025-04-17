@@ -6,6 +6,7 @@ import express from 'express';
 import { BraveImageSearchTool } from './tools/BraveImageSearchTool.js';
 import { BraveLocalSearchTool } from './tools/BraveLocalSearchTool.js';
 import { BraveNewsSearchTool } from './tools/BraveNewsSearchTool.js';
+import { BraveVideoSearchTool } from './tools/BraveVideoSearchTool.js';
 import { BraveWebSearchTool } from './tools/BraveWebSearchTool.js';
 
 export class BraveMcpServer {
@@ -15,6 +16,7 @@ export class BraveMcpServer {
   private webSearchTool: BraveWebSearchTool;
   private localSearchTool: BraveLocalSearchTool;
   private newsSearchTool: BraveNewsSearchTool;
+  private videoSearchTool: BraveVideoSearchTool;
 
   constructor(private useSSE: boolean, private port: number, private braveSearchApiKey: string) {
     this.server = new McpServer(
@@ -36,6 +38,7 @@ export class BraveMcpServer {
     this.webSearchTool = new BraveWebSearchTool(this, this.braveSearch);
     this.localSearchTool = new BraveLocalSearchTool(this, this.braveSearch, this.webSearchTool);
     this.newsSearchTool = new BraveNewsSearchTool(this, this.braveSearch);
+    this.videoSearchTool = new BraveVideoSearchTool(this, this.braveSearch);
     this.setupTools();
   }
 
@@ -63,6 +66,12 @@ export class BraveMcpServer {
       this.newsSearchTool.description,
       this.newsSearchTool.inputSchema.shape,
       this.newsSearchTool.execute.bind(this.newsSearchTool),
+    );
+    this.server.tool(
+      this.videoSearchTool.name,
+      this.videoSearchTool.description,
+      this.videoSearchTool.inputSchema.shape,
+      this.videoSearchTool.execute.bind(this.videoSearchTool),
     );
   }
 
