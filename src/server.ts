@@ -1,12 +1,16 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { BraveSearch } from 'brave-search';
 import express from 'express';
+import { BraveImageSearchTool } from './tools/BraveImageSearchTool.js';
 
 export class BraveMcpServer {
   private server: McpServer;
+  private braveSearch: BraveSearch;
+  private braveImageSearchTool: BraveImageSearchTool;
 
-  constructor(private useSSE: boolean, private port: number) {
+  constructor(private useSSE: boolean, private port: number, private braveSearchApiKey: string) {
     this.server = new McpServer(
       {
         name: 'Brave Search MCP Server',
@@ -20,6 +24,19 @@ export class BraveMcpServer {
           logging: {},
         },
       },
+    );
+    this.braveSearch = new BraveSearch(braveSearchApiKey);
+    this.braveImageSearchTool = new BraveImageSearchTool(this, this.braveSearch);
+
+    this.setupTools();
+  }
+
+  private setupTools(): void {
+    this.server.tool(
+      this.braveImageSearchTool.name,
+      this.braveImageSearchTool.description,
+      this.braveImageSearchTool.inputSchema.shape,
+      this.braveImageSearchTool.execute.bind(this.braveImageSearchTool),
     );
   }
 
