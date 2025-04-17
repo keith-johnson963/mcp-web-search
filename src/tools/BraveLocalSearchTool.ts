@@ -1,0 +1,59 @@
+import type { BraveSearch } from 'brave-search';
+import type { BraveMcpServer } from '../server.js';
+import type { BraveWebSearchTool } from './BraveWebSearchTool.js';
+import { SafeSearchLevel } from 'brave-search/dist/types.js';
+import { z } from 'zod';
+import { formatPoiResults } from '../utils.js';
+import { BaseTool } from './BaseTool.js';
+
+const localSearchInputSchema = z.object({
+  query: z.string().describe('Local search query (e.g. \'pizza near Central Park\')'),
+  count: z.number().min(1).max(20).default(10).optional().describe('The number of results to return, minimum 1, maximum 20'),
+});
+
+export class BraveLocalSearchTool extends BaseTool<typeof localSearchInputSchema, any> {
+  public readonly name = 'brave_local_search';
+  public readonly description = 'Searches for local businesses and places using Brave\'s Local Search API. '
+    + 'Best for queries related to physical locations, businesses, restaurants, services, etc. '
+    + 'Returns detailed information including:\n'
+    + '- Business names and addresses\n'
+    + '- Ratings and review counts\n'
+    + '- Phone numbers and opening hours\n'
+    + 'Use this when the query implies \'near me\' or mentions specific locations. '
+    + 'Automatically falls back to web search if no local results are found.';
+
+  public readonly inputSchema = localSearchInputSchema;
+
+  constructor(private braveMcpServer: BraveMcpServer, private braveSearch: BraveSearch, private webSearchTool: BraveWebSearchTool) {
+    super();
+  }
+
+  public async executeCore(input: z.infer<typeof localSearchInputSchema>) {
+    const { query, count } = input;
+    const results = await this.braveSearch.webSearch(query, {
+      count,
+      safesearch: SafeSearchLevel.Strict,
+      result_filter: 'locations',
+    });
+    if (!results.locations || results.locations?.results.length === 0) {
+      this.braveMcpServer.log(`No location results found for "${query}" falling back to web search. Make sure your API Plan is at least "Pro"`);
+      return this.webSearchTool.executeCore({ query, count, offset: 0 });
+    }
+    const ids = results.locations.results.map(result => result.id);
+    this.braveMcpServer.log(`Found ${ids.length} location IDs for "${query}"`, 'debug');
+    // Break ids into chunks of 20 (API limit)
+    const idChunks = [];
+    for (let i = 0; i < ids.length; i += 20) {
+      idChunks.push(ids.slice(i, i + 20));
+    }
+    const formattedText = [];
+    for (const idChunk of idChunks) {
+      const localPoiSearchApiResponse = await this.braveSearch.localPoiSearch(idChunk);
+      const localDescriptionsSearchApiResponse = await this.braveSearch.localDescriptionsSearch(idChunk);
+      const text = formatPoiResults(localPoiSearchApiResponse, localDescriptionsSearchApiResponse);
+      formattedText.push(text);
+    }
+    const text = formattedText.join('\n\n');
+    return { content: [{ type: 'text' as const, text }] };
+  }
+}
