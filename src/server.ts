@@ -50,6 +50,12 @@ export class BraveMcpServer {
     }
   }
 
+  public resourceChangedNotification() {
+    this.server.server.notification({
+      method: 'notifications/resources/list_changed',
+    });
+  }
+
   public log(
     message: string,
     level: 'error' | 'debug' | 'info' | 'notice' | 'warning' | 'critical' | 'alert' | 'emergency' = 'info',
