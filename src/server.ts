@@ -4,11 +4,13 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { BraveSearch } from 'brave-search';
 import express from 'express';
 import { BraveImageSearchTool } from './tools/BraveImageSearchTool.js';
+import { BraveWebSearchTool } from './tools/BraveWebSearchTool.js';
 
 export class BraveMcpServer {
   private server: McpServer;
   private braveSearch: BraveSearch;
-  private braveImageSearchTool: BraveImageSearchTool;
+  private imageSearchTool: BraveImageSearchTool;
+  private webSearchTool: BraveWebSearchTool;
 
   constructor(private useSSE: boolean, private port: number, private braveSearchApiKey: string) {
     this.server = new McpServer(
@@ -26,17 +28,24 @@ export class BraveMcpServer {
       },
     );
     this.braveSearch = new BraveSearch(braveSearchApiKey);
-    this.braveImageSearchTool = new BraveImageSearchTool(this, this.braveSearch);
+    this.imageSearchTool = new BraveImageSearchTool(this, this.braveSearch);
+    this.webSearchTool = new BraveWebSearchTool(this, this.braveSearch);
 
     this.setupTools();
   }
 
   private setupTools(): void {
     this.server.tool(
-      this.braveImageSearchTool.name,
-      this.braveImageSearchTool.description,
-      this.braveImageSearchTool.inputSchema.shape,
-      this.braveImageSearchTool.execute.bind(this.braveImageSearchTool),
+      this.imageSearchTool.name,
+      this.imageSearchTool.description,
+      this.imageSearchTool.inputSchema.shape,
+      this.imageSearchTool.execute.bind(this.imageSearchTool),
+    );
+    this.server.tool(
+      this.webSearchTool.name,
+      this.webSearchTool.description,
+      this.webSearchTool.inputSchema.shape,
+      this.webSearchTool.execute.bind(this.webSearchTool),
     );
   }
 

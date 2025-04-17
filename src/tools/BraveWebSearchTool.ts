@@ -18,7 +18,7 @@ export class BraveWebSearchTool extends BaseTool<typeof webSearchInputSchema, an
 
   public readonly inputSchema = webSearchInputSchema;
 
-  constructor(private braveSearch: BraveSearch, private braveMcpServer: BraveMcpServer) {
+  constructor(private braveMcpServer: BraveMcpServer, private braveSearch: BraveSearch) {
     super();
   }
 
