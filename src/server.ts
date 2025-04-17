@@ -1,6 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { ListResourcesRequestSchema, ReadResourceRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { BraveSearch } from 'brave-search';
 import express from 'express';
 import { BraveImageSearchTool } from './tools/BraveImageSearchTool.js';
@@ -40,6 +41,7 @@ export class BraveMcpServer {
     this.newsSearchTool = new BraveNewsSearchTool(this, this.braveSearch);
     this.videoSearchTool = new BraveVideoSearchTool(this, this.braveSearch);
     this.setupTools();
+    this.setupResourceListener();
   }
 
   private setupTools(): void {
@@ -73,6 +75,39 @@ export class BraveMcpServer {
       this.videoSearchTool.inputSchema.shape,
       this.videoSearchTool.execute.bind(this.videoSearchTool),
     );
+  }
+
+  private setupResourceListener(): void {
+    this.server.server.setRequestHandler(ListResourcesRequestSchema, async () => ({
+      resources: [
+        ...Array.from(this.imageSearchTool.imageByTitle.keys()).map(title => ({
+          uri: `brave-image://${title}`,
+          mimeType: 'image/png',
+          name: `${title}`,
+        })),
+      ],
+    }));
+
+    this.server.server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
+      const uri = request.params.uri.toString();
+      if (uri.startsWith('brave-image://')) {
+        const title = uri.split('://')[1];
+        const image = this.imageSearchTool.imageByTitle.get(title);
+        if (image) {
+          return {
+            contents: [{
+              uri,
+              mimeType: 'image/png',
+              blob: image,
+            }],
+          };
+        }
+      }
+      return {
+        content: [{ type: 'text', text: `Resource not found: ${uri}` }],
+        isError: true,
+      };
+    });
   }
 
   public async start() {
