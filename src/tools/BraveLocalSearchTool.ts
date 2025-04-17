@@ -1,10 +1,11 @@
-import type { BraveSearch } from 'brave-search';
+import type { BraveSearch, LocalDescriptionsSearchApiResponse, LocalPoiSearchApiResponse } from 'brave-search';
 import type { BraveMcpServer } from '../server.js';
 import type { BraveWebSearchTool } from './BraveWebSearchTool.js';
 import { SafeSearchLevel } from 'brave-search/dist/types.js';
 import { z } from 'zod';
 import { formatPoiResults } from '../utils.js';
 import { BaseTool } from './BaseTool.js';
+import axios from 'axios';
 
 const localSearchInputSchema = z.object({
   query: z.string().describe('Local search query (e.g. \'pizza near Central Park\')'),
@@ -24,7 +25,10 @@ export class BraveLocalSearchTool extends BaseTool<typeof localSearchInputSchema
 
   public readonly inputSchema = localSearchInputSchema;
 
-  constructor(private braveMcpServer: BraveMcpServer, private braveSearch: BraveSearch, private webSearchTool: BraveWebSearchTool) {
+  private baseUrl = 'https://api.search.brave.com/res/v1';
+
+  constructor(private braveMcpServer: BraveMcpServer, private braveSearch: BraveSearch, 
+    private webSearchTool: BraveWebSearchTool, private apiKey: string) {
     super();
   }
 
@@ -48,12 +52,62 @@ export class BraveLocalSearchTool extends BaseTool<typeof localSearchInputSchema
     }
     const formattedText = [];
     for (const idChunk of idChunks) {
-      const localPoiSearchApiResponse = await this.braveSearch.localPoiSearch(idChunk);
-      const localDescriptionsSearchApiResponse = await this.braveSearch.localDescriptionsSearch(idChunk);
+      const localPoiSearchApiResponse = await this.localPoiSearch(idChunk);
+      const localDescriptionsSearchApiResponse = await this.localDescriptionsSearch(idChunk);
       const text = formatPoiResults(localPoiSearchApiResponse, localDescriptionsSearchApiResponse);
       formattedText.push(text);
     }
     const text = formattedText.join('\n\n');
     return { content: [{ type: 'text' as const, text }] };
   }
+
+  // workaround for https://github.com/erik-balfe/brave-search/pull/3 
+  // not being merged yet into brave-search
+  private async localPoiSearch(ids: string[]) {
+    try {
+      const response = await axios.get<LocalPoiSearchApiResponse>(
+        `${this.baseUrl}/local/pois`,
+        {
+          params: { ids },
+          paramsSerializer: {
+            indexes: null
+          },
+          headers: this.getHeaders()
+        }
+      )
+      return response.data;
+    } catch (error) {
+      this.braveMcpServer.log(`Error in localPoiSearch: ${error}`, 'error');
+      throw error;
+    }
+  }
+
+  private async localDescriptionsSearch(ids: string[]) {
+    try {
+      const response = await axios.get<LocalDescriptionsSearchApiResponse>(
+        `${this.baseUrl}/local/descriptions`,
+        {
+          params: { ids },
+          paramsSerializer: {
+            indexes: null
+          },
+          headers: this.getHeaders(),
+        },
+      );
+      return response.data;
+    } catch (error) {
+      this.braveMcpServer.log(`Error in localDescriptionsSearch: ${error}`, 'error');
+      throw error;
+    }
+  }
+
+
+  private getHeaders() {
+    return {
+      Accept: "application/json",
+      "Accept-Encoding": "gzip",
+      "X-Subscription-Token": this.apiKey,
+    };
+  }
+  // end workaround
 }
