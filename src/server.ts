@@ -4,6 +4,7 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { BraveSearch } from 'brave-search';
 import express from 'express';
 import { BraveImageSearchTool } from './tools/BraveImageSearchTool.js';
+import { BraveLocalSearchTool } from './tools/BraveLocalSearchTool.js';
 import { BraveWebSearchTool } from './tools/BraveWebSearchTool.js';
 
 export class BraveMcpServer {
@@ -11,6 +12,7 @@ export class BraveMcpServer {
   private braveSearch: BraveSearch;
   private imageSearchTool: BraveImageSearchTool;
   private webSearchTool: BraveWebSearchTool;
+  private localSearchTool: BraveLocalSearchTool;
 
   constructor(private useSSE: boolean, private port: number, private braveSearchApiKey: string) {
     this.server = new McpServer(
@@ -30,7 +32,7 @@ export class BraveMcpServer {
     this.braveSearch = new BraveSearch(braveSearchApiKey);
     this.imageSearchTool = new BraveImageSearchTool(this, this.braveSearch);
     this.webSearchTool = new BraveWebSearchTool(this, this.braveSearch);
-
+    this.localSearchTool = new BraveLocalSearchTool(this, this.braveSearch, this.webSearchTool);
     this.setupTools();
   }
 
@@ -46,6 +48,12 @@ export class BraveMcpServer {
       this.webSearchTool.description,
       this.webSearchTool.inputSchema.shape,
       this.webSearchTool.execute.bind(this.webSearchTool),
+    );
+    this.server.tool(
+      this.localSearchTool.name,
+      this.localSearchTool.description,
+      this.localSearchTool.inputSchema.shape,
+      this.localSearchTool.execute.bind(this.localSearchTool),
     );
   }
 
