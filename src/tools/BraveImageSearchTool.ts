@@ -38,7 +38,19 @@ export class BraveImageSearchTool extends BaseTool<typeof imageSearchInputSchema
       base64Strings.push(base64);
       this.imageByTitle.set(result.title, base64);
     }
+    const results = [];
+    for (const [index, title] of titles.entries()) {
+      results.push({
+        type: 'text',
+        text: `${title}`,
+      });
+      results.push({
+        type: 'image',
+        data: base64Strings[index],
+        mimeType: 'image/png',
+      });
+    }
     this.server.resourceChangedNotification();
-    return { titles, base64Strings };
+    return { content: results };
   }
 }
