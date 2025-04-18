@@ -1,32 +1,33 @@
-import { BraveSearch } from 'brave-search';
+import type { BraveSearch } from 'brave-search';
+import type { BraveSearchOptions, Profile, Query, VideoData, VideoResult } from 'brave-search/dist/types.js';
 import type { BraveMcpServer } from '../server.js';
-import { BraveSearchOptions, Profile, Query, SafeSearchLevel, VideoData, VideoResult } from 'brave-search/dist/types.js';
+import axios from 'axios';
+import { SafeSearchLevel } from 'brave-search/dist/types.js';
 import { z } from 'zod';
 import { formatVideoResults } from '../utils.js';
 import { BaseTool } from './BaseTool.js';
-import axios from 'axios';
 
-// workaround for https://github.com/erik-balfe/brave-search/pull/4 
+// workaround for https://github.com/erik-balfe/brave-search/pull/4
 // not being merged yet into brave-search
 export interface BraveVideoData extends VideoData {
   /**
-  * Whether the video requires a subscription.
-  * @type {boolean}
-  */
+   * Whether the video requires a subscription.
+   * @type {boolean}
+   */
   requires_subscription?: boolean;
   /**
    * A list of tags relevant to the video.
    * @type {string[]}
    */
   tags?: string[];
-    /**
+  /**
    * A profile associated with the video.
    * @type {Profile}
    */
   author?: Profile;
 }
 
-export interface BraveVideoResult extends  Omit<VideoResult, 'video'> {
+export interface BraveVideoResult extends Omit<VideoResult, 'video'> {
   video: BraveVideoData;
 }
 
@@ -66,7 +67,7 @@ export class BraveVideoSearchTool extends BaseTool<typeof videoSearchInputSchema
 
   public readonly inputSchema = videoSearchInputSchema;
 
-  private baseUrl = "https://api.search.brave.com/res/v1";
+  private baseUrl = 'https://api.search.brave.com/res/v1';
 
   constructor(private braveMcpServer: BraveMcpServer, private braveSearch: BraveSearch, private apiKey: string) {
     super();
@@ -88,27 +89,23 @@ export class BraveVideoSearchTool extends BaseTool<typeof videoSearchInputSchema
     return { content: [{ type: 'text' as const, text }] };
   }
 
-  // workaround for https://github.com/erik-balfe/brave-search/pull/4 
+  // workaround for https://github.com/erik-balfe/brave-search/pull/4
   // not being merged yet into brave-search
   private async videoSearch(
     query: string,
-    options: VideoSearchOptions = {}
+    options: VideoSearchOptions = {},
   ): Promise<VideoSearchApiResponse> {
-    try {
-      const response = await axios.get<VideoSearchApiResponse>(
-        `${this.baseUrl}/videos/search?`,
-        {
-          params: {
-            q: query,
-            ...this.formatOptions(options),
-          },
-          headers: this.getHeaders(),
+    const response = await axios.get<VideoSearchApiResponse>(
+      `${this.baseUrl}/videos/search?`,
+      {
+        params: {
+          q: query,
+          ...this.formatOptions(options),
         },
-      );
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+        headers: this.getHeaders(),
+      },
+    );
+    return response.data;
   }
 
   private formatOptions(options: Record<string, any>): Record<string, string> {
@@ -125,9 +122,9 @@ export class BraveVideoSearchTool extends BaseTool<typeof videoSearchInputSchema
 
   private getHeaders() {
     return {
-      Accept: "application/json",
-      "Accept-Encoding": "gzip",
-      "X-Subscription-Token": this.apiKey,
+      'Accept': 'application/json',
+      'Accept-Encoding': 'gzip',
+      'X-Subscription-Token': this.apiKey,
     };
   }
   // end workaround
