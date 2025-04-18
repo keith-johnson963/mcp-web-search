@@ -1,11 +1,11 @@
 import type { BraveSearch, LocalDescriptionsSearchApiResponse, LocalPoiSearchApiResponse } from 'brave-search';
 import type { BraveMcpServer } from '../server.js';
 import type { BraveWebSearchTool } from './BraveWebSearchTool.js';
+import axios from 'axios';
 import { SafeSearchLevel } from 'brave-search/dist/types.js';
 import { z } from 'zod';
 import { formatPoiResults } from '../utils.js';
 import { BaseTool } from './BaseTool.js';
-import axios from 'axios';
 
 const localSearchInputSchema = z.object({
   query: z.string().describe('Local search query (e.g. \'pizza near Central Park\')'),
@@ -27,8 +27,7 @@ export class BraveLocalSearchTool extends BaseTool<typeof localSearchInputSchema
 
   private baseUrl = 'https://api.search.brave.com/res/v1';
 
-  constructor(private braveMcpServer: BraveMcpServer, private braveSearch: BraveSearch, 
-    private webSearchTool: BraveWebSearchTool, private apiKey: string) {
+  constructor(private braveMcpServer: BraveMcpServer, private braveSearch: BraveSearch, private webSearchTool: BraveWebSearchTool, private apiKey: string) {
     super();
   }
 
@@ -61,7 +60,7 @@ export class BraveLocalSearchTool extends BaseTool<typeof localSearchInputSchema
     return { content: [{ type: 'text' as const, text }] };
   }
 
-  // workaround for https://github.com/erik-balfe/brave-search/pull/3 
+  // workaround for https://github.com/erik-balfe/brave-search/pull/3
   // not being merged yet into brave-search
   private async localPoiSearch(ids: string[]) {
     try {
@@ -70,13 +69,14 @@ export class BraveLocalSearchTool extends BaseTool<typeof localSearchInputSchema
         {
           params: { ids },
           paramsSerializer: {
-            indexes: null
+            indexes: null,
           },
-          headers: this.getHeaders()
-        }
-      )
+          headers: this.getHeaders(),
+        },
+      );
       return response.data;
-    } catch (error) {
+    }
+    catch (error) {
       this.braveMcpServer.log(`Error in localPoiSearch: ${error}`, 'error');
       throw error;
     }
@@ -89,24 +89,24 @@ export class BraveLocalSearchTool extends BaseTool<typeof localSearchInputSchema
         {
           params: { ids },
           paramsSerializer: {
-            indexes: null
+            indexes: null,
           },
           headers: this.getHeaders(),
         },
       );
       return response.data;
-    } catch (error) {
+    }
+    catch (error) {
       this.braveMcpServer.log(`Error in localDescriptionsSearch: ${error}`, 'error');
       throw error;
     }
   }
 
-
   private getHeaders() {
     return {
-      Accept: "application/json",
-      "Accept-Encoding": "gzip",
-      "X-Subscription-Token": this.apiKey,
+      'Accept': 'application/json',
+      'Accept-Encoding': 'gzip',
+      'X-Subscription-Token': this.apiKey,
     };
   }
   // end workaround
