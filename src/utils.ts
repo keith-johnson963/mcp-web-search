@@ -41,8 +41,8 @@ function formatOpeningHours(data: OpeningHours): string {
   });
   const weekly = data.days.map((daySlot) => {
     return daySlot.map((day) => {
-      return `${day.full_name} ${day.opens} - ${day.closes}\n`;
+      return `${day.full_name} ${day.opens} - ${day.closes}`;
     });
   });
-  return `Today: ${today}\nWeekly: ${weekly.join('\n')}`;
+  return `Today: ${today}\nWeekly:\n${weekly.join('\n')}`;
 }
