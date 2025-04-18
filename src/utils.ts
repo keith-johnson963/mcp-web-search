@@ -11,7 +11,7 @@ export function formatPoiResults(poiData: LocalPoiSearchApiResponse, poiDesc: Lo
       + `Email: ${poi.contact?.email || 'No email found'}\n`
       + `Price Range: ${poi.price_range || 'No price range found'}\n`
       + `Ratings: ${poi.rating?.ratingValue || 'N/A'} (${poi.rating?.reviewCount}) reviews\n`
-      + `Hours:\n ${(poi.opening_hours) ? formatOpeningHours(poi.opening_hours).join('\n') : 'No opening hours found'}\n`
+      + `Hours:\n ${(poi.opening_hours) ? formatOpeningHours(poi.opening_hours) : 'No opening hours found'}\n`
       + `Description: ${(description) ? description.description : 'No description found'}\n`;
   }).join('\n---\n');
 }
@@ -35,98 +35,14 @@ export function formatVideoResults(results: BraveVideoResult[]) {
   }).join('\n---\n');
 }
 
-function formatOpeningHours(data: OpeningHours): string[] {
-  const WEEK_ORDER = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-
-  // Build a lookup map: abbr_name → { full_name, intervals, isToday }
-  const lookup: Record<string, {
-    full_name: string;
-    intervals: { opens: string; closes: string }[];
-    isToday: boolean;
-  }> = {};
-
-  // Populate from the weekly days
-  data.days.forEach((daySlots) => {
-    if (!daySlots.length)
-      return;
-    const { abbr_name, full_name } = daySlots[0];
-    lookup[abbr_name] = {
-      full_name,
-      intervals: daySlots.map(d => ({ opens: d.opens, closes: d.closes })),
-      isToday: false,
-    };
+function formatOpeningHours(data: OpeningHours): string {
+  const today = data.current_day.map((day) => {
+    return `${day.full_name} ${day.opens} - ${day.closes}\n`;
   });
-
-  // Override today’s entry and mark it
-  if (data.current_day.length) {
-    const todayAbbr = data.current_day[0].abbr_name;
-    const todayFull = data.current_day[0].full_name;
-    const todaySlots = data.current_day.map(d => ({ opens: d.opens, closes: d.closes }));
-    lookup[todayAbbr] = {
-      full_name: todayFull,
-      intervals: todaySlots,
-      isToday: true,
-    };
-  }
-
-  // Sort days Mon→Sun, filtering out any missing
-  const sorted = WEEK_ORDER
-    .map(abbr => lookup[abbr])
-    .filter(Boolean);
-
-  // Helper: compare two arrays of {opens,closes}
-  const sameIntervals = (
-    a: { opens: string; closes: string }[],
-    b: { opens: string; closes: string }[],
-  ): boolean => {
-    if (a.length !== b.length)
-      return false;
-    return a.every((slot, i) =>
-      slot.opens === b[i].opens && slot.closes === b[i].closes,
-    );
-  };
-
-  // Group consecutive days with identical intervals
-  interface Group {
-    days: string[];
-    intervals: { opens: string; closes: string }[];
-    isToday: boolean;
-  }
-  const groups: Group[] = [];
-  let current: Group | null = null;
-
-  for (const day of sorted) {
-    if (
-      current
-      && sameIntervals(current.intervals, day.intervals)
-    ) {
-      // extend current group
-      current.days.push(day.full_name);
-      current.isToday ||= day.isToday;
-    }
-    else {
-      // push previous and start new
-      if (current)
-        groups.push(current);
-      current = {
-        days: [day.full_name],
-        intervals: day.intervals,
-        isToday: day.isToday,
-      };
-    }
-  }
-  if (current)
-    groups.push(current);
-
-  // Render each group
-  return groups.map((g) => {
-    const dayLabel = g.days.length > 1
-      ? `${g.days[0]}–${g.days[g.days.length - 1]}`
-      : g.days[0];
-    const hoursLabel = g.intervals
-      .map(slot => `${slot.opens}–${slot.closes}`)
-      .join(', ');
-    const todayMark = g.isToday ? ' (today)' : '';
-    return `${dayLabel}: ${hoursLabel}${todayMark}`;
+  const weekly = data.days.map((daySlot) => {
+    return daySlot.map((day) => {
+      return `${day.full_name} ${day.opens} - ${day.closes}\n`;
+    });
   });
+  return `Today: ${today}\nWeekly: ${weekly.join('\n')}`;
 }
