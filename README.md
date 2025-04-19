@@ -36,7 +36,7 @@ An MCP Server implementation that integrates the [Brave Search API](https://brav
 - **brave_local_search**
 
   - Search for local businesses, services and points of interest
-  - **REQUIRES** subscription to the Pro api plan
+  - **REQUIRES** subscription to the Pro api plan for location results
   - Falls back to brave_web_search if no location results are found
   - Inputs:
     - `query` (string): Local search term
