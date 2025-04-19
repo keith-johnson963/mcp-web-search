@@ -83,7 +83,7 @@ export class BraveLocalSearchTool extends BaseTool<typeof localSearchInputSchema
       return response.data;
     }
     catch (error) {
-      this.braveMcpServer.log(`Error in localPoiSearch: ${error}`, 'error');
+      this.handleError(error, 'localPoiSearch');
       throw error;
     }
   }
@@ -103,8 +103,23 @@ export class BraveLocalSearchTool extends BaseTool<typeof localSearchInputSchema
       return response.data;
     }
     catch (error) {
-      this.braveMcpServer.log(`Error in localDescriptionsSearch: ${error}`, 'error');
+      this.handleError(error, 'localDescriptionsSearch');
       throw error;
+    }
+  }
+
+  private handleError(error: any, method: string) {
+    if (axios.isAxiosError(error)) {
+      const status = error.response?.status;
+      const message = error.response?.data?.message || error.message;
+      const responseData = error.response?.data;
+      this.braveMcpServer.log(`Error in ${method}: ${status} - ${message}`, 'error');
+      if (responseData) {
+        this.braveMcpServer.log(`Response data: ${JSON.stringify(responseData)}`, 'error');
+      }
+    }
+    else {
+      this.braveMcpServer.log(`Error in ${method}: ${error}`, 'error');
     }
   }
 
