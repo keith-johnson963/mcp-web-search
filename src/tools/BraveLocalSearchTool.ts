@@ -52,6 +52,12 @@ export class BraveLocalSearchTool extends BaseTool<typeof localSearchInputSchema
     const formattedText = [];
     for (const idChunk of idChunks) {
       const localPoiSearchApiResponse = await this.localPoiSearch(idChunk);
+      // the call to localPoiSearch does not return the id of the pois
+      // add them here, they should be in the same order as the ids
+      // and the same order of id in localDescriptionsSearchApiResponse
+      localPoiSearchApiResponse.results.forEach((result, index) => {
+        (result as any).id = idChunk[index];
+      });
       const localDescriptionsSearchApiResponse = await this.localDescriptionsSearch(idChunk);
       const text = formatPoiResults(localPoiSearchApiResponse, localDescriptionsSearchApiResponse);
       formattedText.push(text);
