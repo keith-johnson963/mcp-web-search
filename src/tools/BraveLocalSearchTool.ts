@@ -111,7 +111,11 @@ export class BraveLocalSearchTool extends BaseTool<typeof localSearchInputSchema
         else if (res.status === 500) {
           this.braveMcpServer.log('500 Internal server error - might be an issue with request format or API temporary issues', 'error');
         }
-        throw new Error(`Error fetching local descriptions data Status:${res.status} Status Text:${res.statusText} Headers:${JSON.stringify(res.headers)}`);
+        // return an empty response instead of error so we can at least return the pois results
+        return {
+          type: 'local_descriptions',
+          results: [],
+        } as LocalDescriptionsSearchApiResponse;
       }
       const data = (await res.json()) as LocalDescriptionsSearchApiResponse;
       return data;
