@@ -32,7 +32,8 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc && shx chmod +x dist/*.js",
+    "clean": "shx rm -rf dist && shx mkdir dist",
+    "build": "npm run clean && tsc && shx chmod +x dist/*.js",
     "build:watch": "tsc --sourceMap -p tsconfig.json -w",
     "prepare": "npm run build",
     "lint": "eslint . --ext .ts,.js,.mjs,.cjs --fix",
