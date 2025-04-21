@@ -75,6 +75,7 @@ export class BraveLocalSearchTool extends BaseTool<typeof localSearchInputSchema
       const res = await fetch(url, {
         method: 'GET',
         headers: this.getHeaders(),
+        redirect: 'follow',
       });
       if (!res.ok) {
         throw new Error(`Error fetching local POI data Status:${res.status} Status Text:${res.statusText} Headers:${JSON.stringify(res.headers)}`);
@@ -96,6 +97,7 @@ export class BraveLocalSearchTool extends BaseTool<typeof localSearchInputSchema
       const res = await fetch(url, {
         method: 'GET',
         headers: this.getHeaders(),
+        redirect: 'follow',
       });
       if (!res.ok) {
         throw new Error(`Error fetching local descriptions data Status:${res.status} Status Text:${res.statusText} Headers:${JSON.stringify(res.headers)}`);
