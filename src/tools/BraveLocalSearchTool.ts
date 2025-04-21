@@ -37,32 +37,31 @@ export class BraveLocalSearchTool extends BaseTool<typeof localSearchInputSchema
       safesearch: SafeSearchLevel.Strict,
       result_filter: 'locations',
     });
+    // it looks like the count parameter is only good for web search results
     if (!results.locations || results.locations?.results.length === 0) {
       this.braveMcpServer.log(`No location results found for "${query}" falling back to web search. Make sure your API Plan is at least "Pro"`);
       return this.webSearchTool.executeCore({ query, count, offset: 0 });
     }
-    const ids = results.locations.results.map(result => result.id);
-    this.braveMcpServer.log(`Found ${ids.length} location IDs for "${query}"`, 'debug');
-    // Break ids into chunks of 20 (API limit)
-    const idChunks = [];
-    for (let i = 0; i < ids.length; i += 20) {
-      idChunks.push(ids.slice(i, i + 20));
-    }
+    const allIds = results.locations.results.map(result => result.id);
+    // count is restricted to 20 in the schema, and the location support up to 20 at a time
+    // so we can just use the count parameter to limit the number of ids
+    const ids = allIds.slice(0, count);
+    this.braveMcpServer.log(`Using ${ids.length} of ${allIds.length} location IDs for "${query}"`, 'debug');
+    // split the ids into chunks of 10, because the API only accepts 10 ids at a time
     const formattedText = [];
-    for (const idChunk of idChunks) {
-      const localPoiSearchApiResponse = await this.localPoiSearch(idChunk);
-      // the call to localPoiSearch does not return the id of the pois
-      // add them here, they should be in the same order as the ids
-      // and the same order of id in localDescriptionsSearchApiResponse
-      localPoiSearchApiResponse.results.forEach((result, index) => {
-        (result as any).id = idChunk[index];
-      });
-      const localDescriptionsSearchApiResponse = await this.localDescriptionsSearch(idChunk);
-      const text = formatPoiResults(localPoiSearchApiResponse, localDescriptionsSearchApiResponse);
-      formattedText.push(text);
-    }
-    const text = formattedText.join('\n\n');
-    return { content: [{ type: 'text' as const, text }] };
+
+    const localPoiSearchApiResponse = await this.localPoiSearch(ids);
+    // the call to localPoiSearch does not return the id of the pois
+    // add them here, they should be in the same order as the ids
+    // and the same order of id in localDescriptionsSearchApiResponse
+    localPoiSearchApiResponse.results.forEach((result, index) => {
+      (result as any).id = ids[index];
+    });
+    const localDescriptionsSearchApiResponse = await this.localDescriptionsSearch(ids);
+    const text = formatPoiResults(localPoiSearchApiResponse, localDescriptionsSearchApiResponse);
+    formattedText.push(text);
+    const finalText = formattedText.join('\n\n');
+    return { content: [{ type: 'text' as const, text: finalText }] };
   }
 
   // workaround for https://github.com/erik-balfe/brave-search/pull/3
