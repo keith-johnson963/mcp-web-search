@@ -1,7 +1,6 @@
 import type { BraveSearch, LocalDescriptionsSearchApiResponse, LocalPoiSearchApiResponse } from 'brave-search';
 import type { BraveMcpServer } from '../server.js';
 import type { BraveWebSearchTool } from './BraveWebSearchTool.js';
-import axios from 'axios';
 import { SafeSearchLevel } from 'brave-search/dist/types.js';
 import { z } from 'zod';
 import { formatPoiResults } from '../utils.js';
@@ -70,61 +69,48 @@ export class BraveLocalSearchTool extends BaseTool<typeof localSearchInputSchema
   // not being merged yet into brave-search
   private async localPoiSearch(ids: string[]) {
     try {
-      const response = await axios.get<LocalPoiSearchApiResponse>(
-        `${this.baseUrl}/local/pois`,
-        {
-          params: { ids },
-          paramsSerializer: {
-            indexes: null,
-          },
-          headers: this.getHeaders(),
-        },
-      );
-      return response.data;
+      const qs = ids.map(id => `ids=${encodeURIComponent(id)}`).join('&');
+      const url = `${this.baseUrl}/local/pois?${qs}`;
+      this.braveMcpServer.log(`Fetching local POI data from ${url}`, 'debug');
+      const res = await fetch(url, {
+        method: 'GET',
+        headers: this.getHeaders(),
+      });
+      if (!res.ok) {
+        throw new Error(`Error fetching local POI data Status:${res.status} Status Text:${res.statusText} Headers:${JSON.stringify(res.headers)}`);
+      }
+      const data = (await res.json()) as LocalPoiSearchApiResponse;
+      return data;
     }
     catch (error) {
-      this.handleError(error, 'localPoiSearch');
+      this.handleError(error);
       throw error;
     }
   }
 
   private async localDescriptionsSearch(ids: string[]) {
     try {
-      const response = await axios.get<LocalDescriptionsSearchApiResponse>(
-        `${this.baseUrl}/local/descriptions`,
-        {
-          params: { ids },
-          paramsSerializer: {
-            indexes: null,
-          },
-          headers: this.getHeaders(),
-        },
-      );
-      return response.data;
+      const qs = ids.map(id => `ids=${encodeURIComponent(id)}`).join('&');
+      const url = `${this.baseUrl}/local/descriptions?${qs}`;
+      this.braveMcpServer.log(`Fetching local descriptions data from ${url}`, 'debug');
+      const res = await fetch(url, {
+        method: 'GET',
+        headers: this.getHeaders(),
+      });
+      if (!res.ok) {
+        throw new Error(`Error fetching local descriptions data Status:${res.status} Status Text:${res.statusText} Headers:${JSON.stringify(res.headers)}`);
+      }
+      const data = (await res.json()) as LocalDescriptionsSearchApiResponse;
+      return data;
     }
     catch (error) {
-      this.handleError(error, 'localDescriptionsSearch');
+      this.handleError(error);
       throw error;
     }
   }
 
-  private handleError(error: any, method: string) {
-    if (axios.isAxiosError(error)) {
-      const status = error.response?.status;
-      const message = error.response?.data?.message || error.message;
-      const responseData = error.response?.data;
-      const headers = error.response?.headers;
-      this.braveMcpServer.log(`Error in ${method}: ${status} - ${message}`, 'error');
-      if (responseData) {
-        this.braveMcpServer.log(`Response data: ${JSON.stringify(responseData)}`, 'error');
-      }
-      if (headers) {
-        this.braveMcpServer.log(`Response headers: ${JSON.stringify(headers)}`, 'error');
-      }
-    }
-    else {
-      this.braveMcpServer.log(`Error in ${method}: ${error}`, 'error');
-    }
+  private handleError(error: any) {
+    this.braveMcpServer.log(`${error}`, 'error');
   }
 
   private getHeaders() {
