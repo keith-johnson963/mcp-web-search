@@ -122,6 +122,7 @@ export class BraveLocalSearchTool extends BaseTool<typeof localSearchInputSchema
       'X-Subscription-Token': this.apiKey,
       'User-Agent': 'BraveSearch/1.0',
       'Content-Type': 'application/json',
+      'Cache-Control': 'no-cache',
     };
   }
   // end workaround
