@@ -115,9 +115,12 @@ export class BraveLocalSearchTool extends BaseTool<typeof localSearchInputSchema
 
   private getHeaders() {
     return {
-      'Accept': 'application/json',
-      'Accept-Encoding': 'gzip',
+      'Accept': '*/*',
+      'Accept-Encoding': 'gzip, deflate, br',
+      'Connection': 'keep-alive',
       'X-Subscription-Token': this.apiKey,
+      'User-Agent': 'BraveSearch/1.0',
+      'Content-Type': 'application/json',
     };
   }
   // end workaround
