@@ -92,13 +92,25 @@ export class BraveLocalSearchTool extends BaseTool<typeof localSearchInputSchema
     try {
       const qs = ids.map(id => `ids=${encodeURIComponent(id)}`).join('&');
       const url = `${this.baseUrl}/local/descriptions?${qs}`;
-      this.braveMcpServer.log(`Fetching local descriptions data from ${url}`, 'debug');
       const res = await fetch(url, {
         method: 'GET',
         headers: this.getHeaders(),
         redirect: 'follow',
       });
       if (!res.ok) {
+        const responseText = await res.text();
+        this.braveMcpServer.log(`Error response body: ${responseText}`, 'error');
+        this.braveMcpServer.log(`Request URL: ${url}`, 'error');
+        this.braveMcpServer.log(`Request headers: ${JSON.stringify(this.getHeaders())}`, 'error');
+        if (res.status === 429) {
+          this.braveMcpServer.log('429 Rate limit exceeded, consider adding delay between requests', 'error');
+        }
+        else if (res.status === 403) {
+          this.braveMcpServer.log('403 Authentication error - check your API key', 'error');
+        }
+        else if (res.status === 500) {
+          this.braveMcpServer.log('500 Internal server error - might be an issue with request format or API temporary issues', 'error');
+        }
         throw new Error(`Error fetching local descriptions data Status:${res.status} Status Text:${res.statusText} Headers:${JSON.stringify(res.headers)}`);
       }
       const data = (await res.json()) as LocalDescriptionsSearchApiResponse;
