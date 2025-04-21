@@ -57,16 +57,6 @@ An MCP Server implementation that integrates the [Brave Search API](https://brav
 2. Choose a plan (Free tier available with 2,000 queries/month)
 3. Generate your API key [from the developer dashboard](https://api.search.brave.com/app/keys)
 
-### Install Dependencies and build it
-
-```bash
-npm install
-```
-
-```bash
-npm run build
-```
-
 ### Usage with Claude Desktop
 
 Add this to your `claude_desktop_config.json`:
@@ -105,6 +95,20 @@ brave-search:
 Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## Debugging
+
+1. Clone the repo
+
+2. Install Dependencies and build it
+
+```bash
+npm install
+```
+
+3. Build the app
+
+```bash
+npm run build
+```
 
 ### Use the VS Code Run and Debug Function
 
