@@ -113,9 +113,13 @@ export class BraveLocalSearchTool extends BaseTool<typeof localSearchInputSchema
       const status = error.response?.status;
       const message = error.response?.data?.message || error.message;
       const responseData = error.response?.data;
+      const headers = error.response?.headers;
       this.braveMcpServer.log(`Error in ${method}: ${status} - ${message}`, 'error');
       if (responseData) {
         this.braveMcpServer.log(`Response data: ${JSON.stringify(responseData)}`, 'error');
+      }
+      if (headers) {
+        this.braveMcpServer.log(`Response headers: ${JSON.stringify(headers)}`, 'error');
       }
     }
     else {
