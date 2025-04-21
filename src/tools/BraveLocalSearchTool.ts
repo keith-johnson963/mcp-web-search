@@ -43,11 +43,10 @@ export class BraveLocalSearchTool extends BaseTool<typeof localSearchInputSchema
       return this.webSearchTool.executeCore({ query, count, offset: 0 });
     }
     const allIds = results.locations.results.map(result => result.id);
-    // count is restricted to 20 in the schema, and the location support up to 20 at a time
-    // so we can just use the count parameter to limit the number of ids
+    // count is restricted to 20 in the schema, and the location api supports up to 20 at a time
+    // so we can just use the count parameter to limit the number of ids, take the first "count" ids
     const ids = allIds.slice(0, count);
     this.braveMcpServer.log(`Using ${ids.length} of ${allIds.length} location IDs for "${query}"`, 'debug');
-    // split the ids into chunks of 10, because the API only accepts 10 ids at a time
     const formattedText = [];
 
     const localPoiSearchApiResponse = await this.localPoiSearch(ids);
