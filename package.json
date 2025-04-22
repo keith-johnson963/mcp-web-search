@@ -20,7 +20,8 @@
     "image-search",
     "news-search",
     "brave-search-api",
-    "brave-search"
+    "brave-search",
+    "brave-search-mcp"
   ],
   "main": "dist/index.js",
   "bin": {
