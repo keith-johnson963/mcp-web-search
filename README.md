@@ -2,6 +2,10 @@
 
 An MCP Server implementation that integrates the [Brave Search API](https://brave.com/search/api/), providing, Web Search, Local Points of Interest Search, Video Search, Image Search and News Search capabilities
 
+<a href="https://glama.ai/mcp/servers/@mikechao/brave-search-mcp">
+  <img width="380" height="200" src="https://glama.ai/mcp/servers/@mikechao/brave-search-mcp/badge" alt="Brave Search MCP server" />
+</a>
+
 ## Features
 
 - **Web Search**: Perform a regular search on the web
