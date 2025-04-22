@@ -1,9 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { ListResourcesRequestSchema, ReadResourceRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { BraveSearch } from 'brave-search';
-import express from 'express';
 import { BraveImageSearchTool } from './tools/BraveImageSearchTool.js';
 import { BraveLocalSearchTool } from './tools/BraveLocalSearchTool.js';
 import { BraveNewsSearchTool } from './tools/BraveNewsSearchTool.js';
@@ -19,7 +17,7 @@ export class BraveMcpServer {
   private newsSearchTool: BraveNewsSearchTool;
   private videoSearchTool: BraveVideoSearchTool;
 
-  constructor(private useSSE: boolean, private port: number, private braveSearchApiKey: string) {
+  constructor(private braveSearchApiKey: string) {
     this.server = new McpServer(
       {
         name: 'Brave Search MCP Server',
@@ -111,30 +109,9 @@ export class BraveMcpServer {
   }
 
   public async start() {
-    if (this.useSSE) {
-      this.log('Running with SSE transport');
-      // configure the server to use SSE transport
-      let transport: SSEServerTransport | null = null;
-      const app = express();
-      app.get('/sse', (req: express.Request, res: express.Response) => {
-        transport = new SSEServerTransport('/messages', res);
-        this.server.connect(transport);
-      });
-
-      app.post('/messages', (req: express.Request, res: express.Response) => {
-        if (transport) {
-          transport.handlePostMessage(req, res);
-        }
-      });
-
-      app.listen(this.port);
-      this.log(`Server is running on port ${this.port} with SSE transport`);
-    }
-    else {
-      const transport = new StdioServerTransport();
-      await this.server.connect(transport);
-      this.log('Server is running with Stdio transport');
-    }
+    const transport = new StdioServerTransport();
+    await this.server.connect(transport);
+    this.log('Server is running with Stdio transport');
   }
 
   public resourceChangedNotification() {
@@ -147,19 +124,9 @@ export class BraveMcpServer {
     message: string,
     level: 'error' | 'debug' | 'info' | 'notice' | 'warning' | 'critical' | 'alert' | 'emergency' = 'info',
   ): void {
-    if (this.useSSE) {
-      if (level === 'error') {
-        console.error(message);
-      }
-      else {
-        console.log(message);
-      }
-    }
-    else {
-      this.server.server.sendLoggingMessage({
-        level,
-        message,
-      });
-    }
+    this.server.server.sendLoggingMessage({
+      level,
+      message,
+    });
   }
 }
