@@ -99,6 +99,7 @@ export class BraveLocalSearchTool extends BaseTool<typeof localSearchInputSchema
       if (!res.ok) {
         const responseText = await res.text();
         this.braveMcpServer.log(`Error response body: ${responseText}`, 'error');
+        this.braveMcpServer.log(`Response headers: ${JSON.stringify(Object.fromEntries(res.headers.entries()))}`, 'error');
         this.braveMcpServer.log(`Request URL: ${url}`, 'error');
         this.braveMcpServer.log(`Request headers: ${JSON.stringify(this.getHeaders())}`, 'error');
         if (res.status === 429) {
