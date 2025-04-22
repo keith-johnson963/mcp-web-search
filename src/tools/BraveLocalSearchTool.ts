@@ -136,7 +136,7 @@ export class BraveLocalSearchTool extends BaseTool<typeof localSearchInputSchema
       'Accept-Encoding': 'gzip, deflate, br',
       'Connection': 'keep-alive',
       'X-Subscription-Token': this.apiKey,
-      'User-Agent': 'BraveSearch/1.0',
+      'User-Agent': 'BraveSearchMCP/1.0',
       'Content-Type': 'application/json',
       'Cache-Control': 'no-cache',
     };
