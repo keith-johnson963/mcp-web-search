@@ -6,6 +6,16 @@ import { BaseTool } from './BaseTool.js';
 const newsSearchInputSchema = z.object({
   query: z.string().describe('The term to search the internet for news articles, trending topics, or recent events'),
   count: z.number().min(1).max(20).default(10).optional().describe('The number of results to return, minimum 1, maximum 20'),
+  freshness: z.enum(['pd', 'pw', 'pm', 'py'])
+    .optional()
+    .describe(
+      `Filters search results by when they were discovered.
+The following values are supported:
+- pd: Discovered within the last 24 hours.
+- pw: Discovered within the last 7 Days.
+- pm: Discovered within the last 31 Days.
+- py: Discovered within the last 365 Days`,
+    ),
 });
 
 export class BraveNewsSearchTool extends BaseTool<typeof newsSearchInputSchema, any> {
@@ -22,9 +32,10 @@ export class BraveNewsSearchTool extends BaseTool<typeof newsSearchInputSchema, 
   }
 
   public async executeCore(input: z.infer<typeof newsSearchInputSchema>) {
-    const { query, count } = input;
+    const { query, count, freshness } = input;
     const newsResult = await this.braveSearch.newsSearch(query, {
       count,
+      ...(freshness ? { freshness } : {}),
     });
     if (!newsResult.results || newsResult.results.length === 0) {
       this.braveMcpServer.log(`No news results found for "${query}"`);
