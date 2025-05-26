@@ -8,6 +8,16 @@ const webSearchInputSchema = z.object({
   query: z.string().describe('The term to search the internet for'),
   count: z.number().min(1).max(20).default(10).optional().describe('The number of results to return, minimum 1, maximum 20'),
   offset: z.number().min(0).default(0).optional().describe('The offset for pagination, minimum 0'),
+  freshness: z.enum(['pd', 'pw', 'pm', 'py'])
+    .optional()
+    .describe(
+      `Filters search results by when they were discovered.
+The following values are supported:
+- pd: Discovered within the last 24 hours.
+- pw: Discovered within the last 7 Days.
+- pm: Discovered within the last 31 Days.
+- py: Discovered within the last 365 Days`,
+    ),
 });
 
 export class BraveWebSearchTool extends BaseTool<typeof webSearchInputSchema, any> {
@@ -23,11 +33,12 @@ export class BraveWebSearchTool extends BaseTool<typeof webSearchInputSchema, an
   }
 
   public async executeCore(input: z.infer<typeof webSearchInputSchema>) {
-    const { query, count, offset } = input;
+    const { query, count, offset, freshness } = input;
     const results = await this.braveSearch.webSearch(query, {
       count,
       offset,
       safesearch: SafeSearchLevel.Strict,
+      ...(freshness ? { freshness } : {}),
     });
     if (!results.web || results.web?.results.length === 0) {
       this.braveMcpServer.log(`No results found for "${query}"`);
