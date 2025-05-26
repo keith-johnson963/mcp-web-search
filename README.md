@@ -65,6 +65,12 @@ An MCP Server implementation that integrates the [Brave Search API](https://brav
   - Inputs:
     - `query`: (string): The term to search for videos
     - `count`: (number, optional): The number of videos to return (max 20, default 10)
+    - `freshness` (enum, optional): Filters search results by when they were discovered
+      - The following values are supported
+        - pd: Discovered within the last 24 hours.
+        - pw: Discovered within the last 7 Days.
+        - pm: Discovered within the last 31 Days.
+        - py: Discovered within the last 365 Days
 
 ## Configuration
 
