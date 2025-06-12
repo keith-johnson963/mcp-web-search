@@ -29,6 +29,7 @@ An MCP Server implementation that integrates the [Brave Search API](https://brav
         - pw: Discovered within the last 7 Days.
         - pm: Discovered within the last 31 Days.
         - py: Discovered within the last 365 Days
+        - YYYY-MM-DDtoYYYY-MM-DD: Custom date range (e.g., 2022-04-01to2022-07-30)
 
 - **brave_image_search**
 
@@ -49,6 +50,7 @@ An MCP Server implementation that integrates the [Brave Search API](https://brav
         - pw: Discovered within the last 7 Days.
         - pm: Discovered within the last 31 Days.
         - py: Discovered within the last 365 Days
+        - YYYY-MM-DDtoYYYY-MM-DD: Custom date range (e.g., 2022-04-01to2022-07-30)
 
 - **brave_local_search**
 
@@ -71,6 +73,7 @@ An MCP Server implementation that integrates the [Brave Search API](https://brav
         - pw: Discovered within the last 7 Days.
         - pm: Discovered within the last 31 Days.
         - py: Discovered within the last 365 Days
+        - YYYY-MM-DDtoYYYY-MM-DD: Custom date range (e.g., 2022-04-01to2022-07-30)
 
 ## Configuration
 

@@ -8,7 +8,10 @@ const webSearchInputSchema = z.object({
   query: z.string().describe('The term to search the internet for'),
   count: z.number().min(1).max(20).default(10).optional().describe('The number of results to return, minimum 1, maximum 20'),
   offset: z.number().min(0).default(0).optional().describe('The offset for pagination, minimum 0'),
-  freshness: z.enum(['pd', 'pw', 'pm', 'py'])
+  freshness: z.union([
+    z.enum(['pd', 'pw', 'pm', 'py']),
+    z.string().regex(/^\d{4}-\d{2}-\d{2}to\d{4}-\d{2}-\d{2}$/, 'Date range must be in format YYYY-MM-DDtoYYYY-MM-DD')
+  ])
     .optional()
     .describe(
       `Filters search results by when they were discovered.
@@ -16,7 +19,8 @@ The following values are supported:
 - pd: Discovered within the last 24 hours.
 - pw: Discovered within the last 7 Days.
 - pm: Discovered within the last 31 Days.
-- py: Discovered within the last 365 Days`,
+- py: Discovered within the last 365 Days.
+- YYYY-MM-DDtoYYYY-MM-DD: Custom date range (e.g., 2022-04-01to2022-07-30)`,
     ),
 });
 
