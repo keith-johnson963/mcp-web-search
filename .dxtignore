@@ -3,5 +3,6 @@ Dockerfile
 eslint.config.js
 smithery.yaml
 tsconfig.json
+DEBUGGING.md
 ./src
 ./.vscode/
