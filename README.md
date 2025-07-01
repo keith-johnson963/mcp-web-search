@@ -85,6 +85,13 @@ An MCP Server implementation that integrates the [Brave Search API](https://brav
 
 ### Usage with Claude Desktop
 
+## Desktop Extension (DXT)
+
+1. Download [brave-search-mcp.dxt](./brave-search-mcp.dxt)
+2. Open it with Claude Desktop
+   or
+   Go to File -> Settings -> Extensions and drag the .DXT file to the window to install it
+
 ## Docker
 
 1. Clone the repo
@@ -153,6 +160,22 @@ brave-search:
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
+
+## Desktop Extensions (DXT)
+
+Anthropic recently released [Desktop Extensions](https://github.com/anthropics/dxt) allowing installation of local MCP Servers with one click.
+
+Install the CLI tool to help generate both `manifest.json` and final `.dxt` file.
+
+```sh
+npm install -g @anthropic-ai/dxt
+```
+
+1. In this folder/directory which contains the local MCP Server, run `dxt init`. The command will start an interactive CLI to help create the `manifest.json`.
+
+2. Run `dxt pack` to create a `dxt` file. This will also validate the manifest.json that was created. The `dxt` is essentially a zip file and will contain everything in this directory.
+
+3. Open the `dxt` with any app supporting DXT like Claude Desktop and brave-search-mcp will be installed.
 
 ## Debugging
 
