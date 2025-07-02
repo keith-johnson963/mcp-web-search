@@ -26,6 +26,13 @@ jobs:
         run: |
           npm install --omit=dev
           dxt pack
+      - name: Upload DXT to GitHub Release
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./brave-search-mcp.dxt
+          asset_name: brave-search-mcp.dxt
+          asset_content_type: application/octet-stream
     permissions:
       contents: read
       id-token: write
