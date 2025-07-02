@@ -87,7 +87,7 @@ An MCP Server implementation that integrates the [Brave Search API](https://brav
 
 ## Desktop Extension (DXT)
 
-1. Download [brave-search-mcp.dxt](./brave-search-mcp.dxt)
+1. Download the `dxt` file from the [Releases](https://github.com/mikechao/brave-search-mcp/releases)
 2. Open it with Claude Desktop
    or
    Go to File -> Settings -> Extensions and drag the .DXT file to the window to install it
