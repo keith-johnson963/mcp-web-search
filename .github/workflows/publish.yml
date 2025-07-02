@@ -20,6 +20,12 @@ jobs:
         run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Install Anthropic DXT CLI
+        run: npm install -g @anthropic-ai/dxt
+      - name: Create DXT file
+        run: |
+          npm install --omit=dev
+          dxt pack
     permissions:
       contents: read
       id-token: write
