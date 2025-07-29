@@ -83,6 +83,24 @@ An MCP Server implementation that integrates the [Brave Search API](https://brav
 2. Choose a plan (Free tier available with 2,000 queries/month)
 3. Generate your API key [from the developer dashboard](https://api.search.brave.com/app/keys)
 
+### Usage with Claude Code
+
+For [Claude Code](https://claude.ai/code) users, run this command:
+
+**Windows:**
+
+```bash
+claude mcp add-json brave-search '{"command":"cmd","args":["/c","npx","-y","brave-search-mcp"],"env":{"BRAVE_API_KEY":"YOUR_API_KEY_HERE"}}'
+```
+
+**Linux/macOS:**
+
+```bash
+claude mcp add-json brave-search '{"command":"npx","args":["-y","brave-search-mcp"],"env":{"BRAVE_API_KEY":"YOUR_API_KEY_HERE"}}'
+```
+
+Replace `YOUR_API_KEY_HERE` with your actual Brave Search API key.
+
 ### Usage with Claude Desktop
 
 ## Desktop Extension (DXT)
