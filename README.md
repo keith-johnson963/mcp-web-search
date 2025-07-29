@@ -85,6 +85,13 @@ An MCP Server implementation that integrates the [Brave Search API](https://brav
 
 ### Usage with Claude Desktop
 
+## Desktop Extension (DXT)
+
+1. Download the `dxt` file from the [Releases](https://github.com/mikechao/brave-search-mcp/releases)
+2. Open it with Claude Desktop
+   or
+   Go to File -> Settings -> Extensions and drag the .DXT file to the window to install it
+
 ## Docker
 
 1. Clone the repo
@@ -154,120 +161,36 @@ brave-search:
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
-## Debugging
+## Desktop Extensions (DXT)
 
-1. Clone the repo
+Anthropic recently released [Desktop Extensions](https://github.com/anthropics/dxt) allowing installation of local MCP Servers with one click.
 
-2. Install Dependencies and build it
+Install the CLI tool to help generate both `manifest.json` and final `.dxt` file.
 
-```bash
-npm install
+```sh
+npm install -g @anthropic-ai/dxt
 ```
 
-3. Build the app
+### Creating the manifest.json file
 
-```bash
+1. In this folder/directory which contains the local MCP Server, run `dxt init`. The command will start an interactive CLI to help create the `manifest.json`.
+
+### Creating the `dxt` file
+
+1. First install dev dependencies and build
+
+```sh
+npm install
 npm run build
 ```
 
-### Use the VS Code Run and Debug Function
+2. Then install only the production dependencies, generate a smaller nodule_modules directory
 
-⚠ Does not seem to work on Windows 10/11, but works in WSL2
-
-Use the VS Code
-[Run and Debug launcher](https://code.visualstudio.com/docs/debugtest/debugging#_start-a-debugging-session) with fully
-functional breakpoints in the code:
-
-1. Locate and select the run debug.
-2. Select the configuration labeled "`MCP Server Launcher`" in the dropdown.
-3. Select the run/debug button.
-   We can debug the various tools using [MCP Inspector](https://github.com/modelcontextprotocol/inspector) and VS Code.
-
-### VS Code Debug setup
-
-To set up local debugging with breakpoints:
-
-1. Store Brave API Key in the VS Code
-
-   - Open the Command Palette (Cmd/Ctrl + Shift + P).
-   - Type `Preferences: Open User Settings (JSON)`.
-   - Add the following snippet:
-
-   ```json
-   {
-     "brave.search.api.key": "your-api-key-here"
-   }
-   ```
-
-2. Create or update `.vscode/launch.json`:
-
-```json
-{
-  "version": "0.2.0",
-  "configurations": [
-    {
-      "type": "node",
-      "request": "launch",
-      "name": "MCP Server Launcher",
-      "skipFiles": ["<node_internals>/**"],
-      "program": "${workspaceFolder}/node_modules/@modelcontextprotocol/inspector/cli/build/cli.js",
-      "outFiles": ["${workspaceFolder}/dist/**/*.js"],
-      "env": {
-        "BRAVE_API_KEY": "${config:brave.search.api.key}",
-        "DEBUG": "true"
-      },
-      "args": ["dist/index.js"],
-      "sourceMaps": true,
-      "console": "integratedTerminal",
-      "internalConsoleOptions": "neverOpen",
-      "preLaunchTask": "npm: build:watch"
-    },
-    {
-      "type": "node",
-      "request": "attach",
-      "name": "Attach to Debug Hook Process",
-      "port": 9332,
-      "skipFiles": ["<node_internals>/**"],
-      "sourceMaps": true,
-      "outFiles": ["${workspaceFolder}/dist/**/*.js"]
-    },
-    {
-      "type": "node",
-      "request": "attach",
-      "name": "Attach to REPL Process",
-      "port": 9333,
-      "skipFiles": ["<node_internals>/**"],
-      "sourceMaps": true,
-      "outFiles": ["${workspaceFolder}/dist/**/*.js"]
-    }
-  ],
-  "compounds": [
-    {
-      "name": "Attach to MCP Server",
-      "configurations": ["Attach to Debug Hook Process", "Attach to REPL Process"]
-    }
-  ]
-}
+```sh
+npm install --omit=dev
 ```
 
-3. Create `.vscode/tasks.json`:
-
-```json
-{
-  "version": "2.0.0",
-  "tasks": [
-    {
-      "type": "npm",
-      "script": "build:watch",
-      "group": {
-        "kind": "build",
-        "isDefault": true
-      },
-      "problemMatcher": ["$tsc"]
-    }
-  ]
-}
-```
+3. Run `dxt pack` to create a `dxt` file. This will also validate the manifest.json that was created. The `dxt` is essentially a zip file and will contain everything in this directory.
 
 ## Disclaimer
 
